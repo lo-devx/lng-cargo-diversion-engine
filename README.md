@@ -64,6 +64,74 @@ Where:
 - Quantifies downside under spread, freight, and carbon shocks.
 - Runs end-to-end in seconds using daily inputs.
 
+## Data contracts (CSV schemas + units)
+### 1) Market data (daily)
+**data/benchmark_prices.csv**
+- date (YYYY-MM-DD)
+- TTF (USD/MMBtu)
+- JKM (USD/MMBtu)
+**data/freight_rates.csv**
+- date (YYYY-MM-DD)
+- TFDE_USD_day (USD/day)
+- MEGI_USD_day (USD/day)
+**data/fuel_prices.csv**
+- date (YYYY-MM-DD)
+- VLSFO_USD_per_t (USD/tonne)
+- LNG_USD_per_t (USD/tonne)
+### 2) Static / semi-static
+**data/routes.csv**
+- load_port (string)
+- discharge_port (string)
+- distance_nm (nautical miles)
+**data/vessels.csv**
+- vessel_class (TFDE|MEGI)
+- cargo_capacity_m3 (m3)
+- laden_speed_kn (knots)
+- ballast_speed_kn (knots)
+- boil_off_pct_per_day (% per day)
+- fuel_consumption_tpd_laden (tonnes/day)
+- fuel_consumption_tpd_ballast (tonnes/day)
+**data/carbon_params.csv**
+- param (string)
+- value (float)
+Required params:
+- EUA_price_USD_per_t (USD/tCO2)
+- CO2_factor_VLSFO_tCO2_per_t_fuel (tCO2 per tonne fuel)
+- CO2_factor_LNG_tCO2_per_t_fuel (tCO2 per tonne fuel)
+### 3) Config (tunable)
+**data/config.csv**
+- param (string)
+- value (float)
+Required params:
+- DECISION_BUFFER_USD (USD)
+- OPERATIONAL_RISK_BUFFER_USD (USD)
+- BASIS_ADJUSTMENT_PCT (0–1)
+- COVERAGE_PCT (0–1)
+- JKM_LOT_MMBTU (MMBtu per lot)
+- TTF_LOT_MMBTU (MMBtu per lot)
+- STRESS_SPREAD_USD (USD/MMBtu)
+- STRESS_FREIGHT_USD_PER_DAY (USD/day)
+- STRESS_EUA_USD (USD/tCO2)
+
+## Unit conventions 
+- Prices: USD/MMBtu (JKM, TTF)
+- Freight: USD/day
+- Fuel: USD/tonne (LNG and VLSFO)
+- Carbon: USD/tCO2
+- Distance: nautical miles
+- Speed: knots
+- Consumption: tonnes/day
+- Boil-off: % of cargo per day
+- Cargo conversion constants used:
+ - LNG density approx = 0.45 tonne per m3
+ - Energy content approx = 52 MMBtu per tonne LNG
+
+ ## Checks 
+- All daily CSVs must have consistent dates and no duplicates
+- No negative prices, freight rates, distances, or speeds
+- BASIS_ADJUSTMENT_PCT and COVERAGE_PCT must be between 0 and 1
+- vessel_class in vessels.csv must match TFDE/MEGI used in freight_rates.csv
+- routes.csv must include the selected (load_port, discharge_port) pair
 
 ## How to run
 ```bash
