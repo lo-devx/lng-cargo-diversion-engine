@@ -1,5 +1,5 @@
 # LNG Cargo Diversion Decision Engine (Dash)
-## What this solves
+## Desk decision supported
 Given today’s market conditions, should an LNG cargo be discharged in Europe or diverted to Asia — and if diverted, what is the hedge, size, and risk?
 This is a trade decision engine:
 - compute Europe netback vs Asia netback
@@ -57,6 +57,13 @@ Where:
 - DeliveredEnergy = (Cargo_m3 − BoilOff_m3) × 0.45 t/m3 × 52 MMBtu/t
 - VoyageCost = FuelCost + TimeCharter + Canal + Port
 - CarbonCost = FuelTonnes × CO2Factor × EUA_price
+- Operational uncertainty (laycan slippage, terminal delays, demurrage) is handled via a fixed OperationalRiskBuffer rather than explici scheduling optimisation.
+## Acceptance Criteria 
+- Produces a clear divert / do-not-divert decision for a given date.
+- Outputs a hedgeable trade ticket with explicit sizing
+- Quantifies downside under spread, freight, and carbon shocks.
+- Runs end-to-end in seconds using daily inputs.
+
 
 ## How to run
 ```bash
