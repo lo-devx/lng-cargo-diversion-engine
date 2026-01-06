@@ -49,7 +49,7 @@ For each evaluation date:
  - average uplift (USD per triggered trade)
  - max drawdown (USD)
  - equity curve
-## Model (transparent, intentionally simple)
+## Model 
 Netback is:
 Revenue − VoyageCost − CarbonCost
 Where:
