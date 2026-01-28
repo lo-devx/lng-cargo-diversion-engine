@@ -1,0 +1,4 @@
+param,value
+EUA_price_USD_per_t,85.0
+CO2_factor_VLSFO_tCO2_per_t_fuel,3.114
+CO2_factor_LNG_tCO2_per_t_fuel,2.75

@@ -1,0 +1,9 @@
+# Reports directory
+This directory contains generated reports from the LNG Cargo Diversion Decision Engine.
+
+## Report Types
+
+- **trade_ticket_*.json** - Trade tickets with hedge details
+- **risk_report_*.json** - Risk/stress test results
+- **backtest_report_*.json** - Backtest performance metrics
+- **equity_curve_*.csv** - Cumulative P&L time series

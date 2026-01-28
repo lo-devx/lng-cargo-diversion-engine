@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-01-28T00:00:00",
+  "decision": "DIVERT",
+  "netback_europe_usd": 48853972.48,
+  "netback_asia_usd": 57038099.21,
+  "delta_netback_raw_usd": 8184126.73,
+  "delta_netback_adj_usd": 7524920.39,
+  "decision_buffer_usd": 500000.0,
+  "basis_adjustment_pct": 0.05,
+  "operational_risk_buffer_usd": 250000.0,
+  "hedge": {
+    "legs": [
+      {
+        "leg": "LONG",
+        "instrument": "JKM",
+        "lots": 319
+      },
+      {
+        "leg": "SHORT",
+        "instrument": "TTF",
+        "lots": 319
+      }
+    ],
+    "jkm_lots": 319,
+    "ttf_lots": 319,
+    "hedge_energy_mmbtu": 3191160.0
+  }
+}
