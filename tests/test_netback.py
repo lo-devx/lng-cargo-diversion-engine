@@ -1,4 +1,4 @@
-#run test with: 'pytest tests/test_scenario.py -s'
+#run test with: 'pytest tests/test_netback.py -s'
 
 import pandas as pd
 import json

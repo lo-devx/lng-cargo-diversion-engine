@@ -9,7 +9,7 @@ from typing import List, Dict
 import pandas as pd
 
 from .netback import NetbackCalculator, NetbackResult
-from .decision import DecisionEngine, DecisionResult
+from .decision import decide_and_size, DecisionResult
 
 
 @dataclass
@@ -48,16 +48,20 @@ class RiskAnalyzer:
     def __init__(
         self,
         netback_calculator: NetbackCalculator,
-        decision_engine: DecisionEngine,
         stress_spread_usd: float,
         stress_freight_usd_per_day: float,
-        stress_eua_usd: float
+        stress_eua_usd: float,
+        basis_haircut_pct: float = 0.05,
+        ops_buffer_usd: float = 50000,
+        decision_buffer_usd: float = 500000
     ):
         self.netback_calculator = netback_calculator
-        self.decision_engine = decision_engine
         self.stress_spread_usd = stress_spread_usd
         self.stress_freight_usd_per_day = stress_freight_usd_per_day
         self.stress_eua_usd = stress_eua_usd
+        self.basis_haircut_pct = basis_haircut_pct
+        self.ops_buffer_usd = ops_buffer_usd
+        self.decision_buffer_usd = decision_buffer_usd
     
     def create_scenarios(self) -> List[StressScenario]:
         """Create standard stress scenarios."""
@@ -129,10 +133,13 @@ class RiskAnalyzer:
             )
             
             # Re-evaluate decision
-            stressed_result = self.decision_engine.evaluate(
-                date=base_result.date,
-                europe_netback=europe_netback,
-                asia_netback=asia_netback
+            stressed_result = decide_and_size(
+                europe_netback_usd=europe_netback.netback_usd,
+                asia_netback_usd=asia_netback.netback_usd,
+                hedge_energy_mmbtu=asia_netback.delivered_energy_mmbtu,
+                basis_haircut_pct=self.basis_haircut_pct,
+                ops_buffer_usd=self.ops_buffer_usd,
+                decision_buffer_usd=self.decision_buffer_usd
             )
             
             # Calculate P&L impact

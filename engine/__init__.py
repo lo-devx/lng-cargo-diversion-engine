@@ -6,7 +6,7 @@ Engine package initialization.
 
 from .data_loader import DataLoader, MarketData, StaticData, Config
 from .netback import NetbackCalculator, NetbackResult, VoyageDetails
-from .decision import DecisionEngine, DecisionResult, TradeTicket
+from .decision import DecisionResult, decide_and_size
 from .risk import RiskAnalyzer, RiskPack, StressResult, StressScenario
 from .backtest import Backtester, BacktestResult, BacktestMetrics
 from .reports import ReportGenerator
@@ -19,9 +19,8 @@ __all__ = [
     "NetbackCalculator",
     "NetbackResult",
     "VoyageDetails",
-    "DecisionEngine",
+    "decide_and_size",
     "DecisionResult",
-    "TradeTicket",
     "RiskAnalyzer",
     "RiskPack",
     "StressResult",
