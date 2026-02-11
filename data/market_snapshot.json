@@ -1,0 +1,9 @@
+{
+  "asof_utc": "2026-02-11T00:00:00Z",
+  "ttf_price": 35.69,
+  "jkm_price": 38.44,
+  "freight_rate": 85000,
+  "fuel_price": 583,
+  "eua_price": 74.40,
+  "note": "Update this file by running the notebook cell that calls mkt.save()"
+}
