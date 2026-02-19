@@ -8,6 +8,7 @@ import pandas as pd
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Dict
+from engine.validation import validate_config
 
 DATA_DIR = Path("data")
 
@@ -57,11 +58,8 @@ class DataLoader:
     def load_config(self) -> Config:
         df = pd.read_csv(self.data_dir / "config.csv")
         params = dict(zip(df["param"], df["value"]))
-        return Config(
-            basis_haircut_pct=params.get("basis_haircut_pct", 0.05),
-            ops_buffer_usd=params.get("ops_buffer_usd", 50000),
-            decision_buffer_usd=params.get("decision_buffer_usd", 500000)
-        )
+        validate_config(params)
+        return Config(**params)
     
     def load_static_data(self) -> StaticData:
         """Load all static data."""
