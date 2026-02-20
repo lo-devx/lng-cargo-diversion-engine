@@ -69,3 +69,28 @@ class DataLoader:
             carbon_params=self.load_carbon_params()
         )
 
+
+# Helper functions (for scripts that don't use the DataLoader class)
+def load_routes() -> pd.DataFrame:
+    """Load routes from CSV."""
+    return pd.read_csv(DATA_DIR / "routes.csv")
+
+
+def load_vessels() -> pd.DataFrame:
+    """Load vessels from CSV."""
+    return pd.read_csv(DATA_DIR / "vessels.csv")
+
+
+def load_carbon_params() -> Dict[str, float]:
+    """Load carbon parameters from CSV."""
+    df = pd.read_csv(DATA_DIR / "carbon_params.csv")
+    return dict(zip(df["param"], df["value"]))
+
+
+def load_config() -> Dict[str, float]:
+    """Load config from CSV and validate."""
+    df = pd.read_csv(DATA_DIR / "config.csv")
+    params = dict(zip(df["param"], df["value"]))
+    validate_config(params)
+    return params
+

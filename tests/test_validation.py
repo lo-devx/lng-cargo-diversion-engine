@@ -18,6 +18,6 @@ def test_validate_config_ok():
     validate_config(VALID_CONFIG)
    
 def test_validate_config_rejects_percent_basis():
-    cfg = {**VALID_CONFIG, "BASIS_ADJUSTMENT": 5.0}  # Wrong: should be 0.05
+    cfg = {**VALID_CONFIG, "BASIS_ADJUSTMENT": 0.05}  # Wrong: should be 0.05
     with pytest.raises(ValueError):
         validate_config(cfg)

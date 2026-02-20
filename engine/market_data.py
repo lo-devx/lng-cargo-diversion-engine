@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 from typing import Dict, Any
 
+# Objective: 
+# Create snapshot of • TTF_USD_MMBTU • JKM_USD_MMBTU (proxy) • FREIGHT_USD_DAY (proxy) • FUEL_USD_PER_T (proxy/manual) • EUA_USD_PER_TCO2 (proxy/manual) • a provenance dict saying what’s proxy vs real.
+
+
 @dataclass
 class MarketSnapshot:
    asof: str
