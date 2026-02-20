@@ -28,7 +28,7 @@ def main():
     parser.add_argument("--vessel-class", default="TFDE", help="Vessel class")
     parser.add_argument("--cargo-m3", type=float, default=174000, help="Cargo capacity in m3")
     
-    # Optional decision parameter overrides
+    # Decision parameter arguments
     parser.add_argument("--basis", type=float, help="Basis haircut 0-1 (e.g. 0.05)")
     parser.add_argument("--ops-buffer", type=float, help="Ops buffer in USD")
     parser.add_argument("--decision-buffer", type=float, help="Decision buffer in USD")
