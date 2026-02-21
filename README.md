@@ -292,6 +292,7 @@ fuel = fetch_bunker_prices("VLSFO", "Singapore")
 
 ### 4. CLI - Trade Note Output
 ![CLI Trade Note](docs/screenshots/4-cli-trade-note.png)
+
 *Command-line output showing decision with all calculations and hedge sizing*
 
 ---
