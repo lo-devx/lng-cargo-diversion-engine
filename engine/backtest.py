@@ -1,7 +1,26 @@
 """
 LNG Cargo Diversion Decision Engine
 
-Backtesting module.
+Backtesting module - Analyzes historical trading performance
+
+This module takes a list of historical decision results (from app.py's backtest loop)
+and calculates performance metrics to validate the decision rule.
+
+Key responsibilities:
+- Calculate hit rate (% of days triggering DIVERT)
+- Compute average and total uplift from triggered trades
+- Build equity curve (cumulative P&L over time)
+- Calculate max drawdown (worst peak-to-trough decline)
+- Compute Sharpe ratio (annualized risk-adjusted returns)
+
+Called by: app.py when --backtest flag is used
+Input: List of decision results with dates, decisions, and netbacks
+Output: BacktestResult with metrics and DataFrames for equity curve and trade history
+
+Example:
+    backtester = Backtester()
+    backtest_result = backtester.run_backtest(results)
+    print(backtest_result.metrics.hit_rate)  # 1.0 = 100% hit rate
 """
 
 from dataclasses import dataclass

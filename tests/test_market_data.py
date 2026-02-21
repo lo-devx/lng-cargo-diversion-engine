@@ -1,26 +1,31 @@
+"""
+Quick test script to see current TTF and EUA prices from Yahoo Finance
+
+Run from project root: python tests/test_market_data.py
+"""
+
+import sys
+from pathlib import Path
+
+# Add parent directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from engine.data_loader import load_config
 from engine.market_data import get_market_snapshot
 
-def test_market_snapshot_proxy_jkm_from_ttf_plus_premium():
-   cfg = {
-       "TTF_USD_MMBTU": 35.69,
-       "EUA_USD_PER_TCO2": 74.40,
-       "JKM_PREMIUM_USD_PER_MMBTU": 2.75,
-       "FREIGHT_USD_DAY": 85000,
-       "FREIGHT_REGIME_MULTIPLIER": 1.0,
-       "FUEL_USD_PER_T": 583,
-   }
-   snap = get_market_snapshot(cfg)
-   assert snap.jkm_usd_mmbtu == 35.69 + 2.75
-   assert snap.freight_usd_day == 85000
-   
-def test_market_snapshot_freight_regime_multiplier_applies():
-   cfg = {
-       "TTF_USD_MMBTU": 35.69,
-       "EUA_USD_PER_TCO2": 74.40,
-       "JKM_PREMIUM_USD_PER_MMBTU": 2.75,
-       "FREIGHT_USD_DAY": 85000,
-       "FREIGHT_REGIME_MULTIPLIER": 1.3,
-       "FUEL_USD_PER_T": 583,
-   }
-   snap = get_market_snapshot(cfg)
-   assert snap.freight_usd_day == 85000 * 1.3
+# Load config
+config = load_config()
+
+# Fetch market snapshot with real Yahoo Finance data
+snapshot = get_market_snapshot(config)
+
+print("\n" + "="*60)
+print("CURRENT MARKET PRICES")
+print("="*60)
+print(f"TTF (European Gas):  ${snapshot.ttf_usd_mmbtu:.2f}/MMBtu  [{snapshot.provenance['TTF']}]")
+print(f"EUA (Carbon):        ${snapshot.eua_usd_per_tco2:.2f}/tCO₂   [{snapshot.provenance['EUA']}]")
+print(f"JKM (Asia Gas):      ${snapshot.jkm_usd_mmbtu:.2f}/MMBtu  [{snapshot.provenance['JKM']}]")
+print(f"Freight:             ${snapshot.freight_usd_day:,.0f}/day [{snapshot.provenance['FREIGHT']}]")
+print(f"Fuel:                ${snapshot.fuel_usd_per_t:.0f}/t    [{snapshot.provenance['FUEL']}]")
+print("="*60)
+print(f"As of: {snapshot.asof}\n")

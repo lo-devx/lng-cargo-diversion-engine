@@ -1,7 +1,17 @@
 """
-LNG Cargo Diversion Decision Engine
+LNG Cargo Diversion Decision Engine - Risk and Stress Testing Module
 
-Risk and stress testing module.
+This module provides the RiskAnalyzer class that generates stress packs by:
+- Creating stress scenarios (spread collapse, freight spike, EUA spike, combined adverse)
+- Re-running netback calculations under each stressed scenario
+- Identifying which scenarios cause decision flips
+- Calculating P&L impact for each scenario
+
+This is a library module (not executable). To see stress testing in action:
+    python tests/test_risk.py           # Manual demonstration with detailed output
+
+To generate and save stress pack CSV:
+    Use the save_stress_csv() function from engine.reports after running stress tests
 """
 
 from dataclasses import dataclass

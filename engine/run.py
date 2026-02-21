@@ -116,7 +116,7 @@ def run_trade_decision(
 
     )
 
-    # Build “trade pack”
+    # Build trade pack
 
     return {
 

@@ -1,176 +1,157 @@
 """
-LNG Cargo Diversion Decision Engine
+LNG Cargo Diversion Decision Engine - Report Generation
 
-Report generation module.
+This module handles all output generation for trade decisions:
+- save_trade_pack(): Saves complete decision data as JSON
+- save_trade_ticket_csv(): Creates desk-friendly CSV with key trade parameters
+- save_stress_csv(): Exports stress test scenarios and results
+
+All reports are saved to reports/ with UTC timestamps. The trade ticket CSV
+includes route details, live market data (TTF/EUA from Yahoo Finance), netback
+calculations, and hedge recommendations for trading desk review.
 """
 
-import json
+from __future__ import annotations
+from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from datetime import datetime
-from typing import Optional
-import pandas as pd
+import csv
+import json
+from typing import Any, Dict, List
 
-from .decision import DecisionResult
-from .risk import RiskPack
-from .backtest import BacktestResult
+REPORTS_DIR = Path("reports")
 
 
-class ReportGenerator:
-    """Generate and save reports."""
+def _timestamp() -> str:
+    """Return UTC timestamp in YYYYmmdd_HHMMSS format."""
+    return datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+
+
+def _to_json_serializable(obj: Any) -> Any:
+    """
+    Recursively convert dataclasses and nested structures to JSON-serializable types.
+    Handles dataclasses, dicts, and lists.
+    """
+    if is_dataclass(obj):
+        return asdict(obj)
+    if isinstance(obj, dict):
+        return {k: _to_json_serializable(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_to_json_serializable(x) for x in obj]
+    return obj
+
+
+def save_trade_pack(pack: Dict[str, Any], *, prefix: str = "trade_pack") -> Path:
+    """
+    Save complete trade pack as JSON with all inputs, decisions, and hedge recommendations.
     
-    def __init__(self, output_dir: str = "reports"):
-        self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(exist_ok=True)
+    Args:
+        pack: Dictionary containing inputs, decision, europe, asia, and hedge_legs
+        prefix: Filename prefix (default: "trade_pack")
     
-    def generate_trade_ticket(
-        self,
-        result: DecisionResult,
-        save: bool = True
-    ) -> dict:
-        """Generate trade ticket as dict and optionally save to file."""
-        ticket = {
-            "timestamp": result.date.isoformat() if isinstance(result.date, datetime) else str(result.date),
-            "decision": result.decision,
-            "netback_europe_usd": round(result.europe_netback.netback_usd, 2),
-            "netback_asia_usd": round(result.asia_netback.netback_usd, 2),
-            "delta_netback_raw_usd": round(result.delta_netback_raw_usd, 2),
-            "delta_netback_adj_usd": round(result.delta_netback_adj_usd, 2),
-            "decision_buffer_usd": round(result.decision_buffer_usd, 2),
-            "basis_adjustment_pct": result.basis_adjustment_pct,
-            "operational_risk_buffer_usd": round(result.operational_risk_buffer_usd, 2),
-        }
-        
-        if result.decision == "DIVERT":
-            ticket["hedge"] = {
-                "legs": result.trade_ticket.hedge_legs,
-                "jkm_lots": result.trade_ticket.jkm_lots,
-                "ttf_lots": result.trade_ticket.ttf_lots,
-                "hedge_energy_mmbtu": round(result.trade_ticket.hedge_energy_mmbtu, 2)
-            }
-        
-        if save:
-            timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-            date_str = result.date.strftime("%Y%m%d") if isinstance(result.date, datetime) else str(result.date).replace("-", "")
-            filename = f"trade_ticket_{date_str}_{timestamp_str}.json"
-            
-            with open(self.output_dir / filename, "w") as f:
-                json.dump(ticket, f, indent=2)
-            
-            print(f"Trade ticket saved to: {self.output_dir / filename}")
-        
-        return ticket
+    Returns:
+        Path to saved JSON file
+    """
+    REPORTS_DIR.mkdir(exist_ok=True)
+    filepath = REPORTS_DIR / f"{prefix}_{_timestamp()}.json"
     
-    def generate_risk_report(
-        self,
-        risk_pack: RiskPack,
-        save: bool = True
-    ) -> dict:
-        """Generate risk report as dict and optionally save to file."""
-        report = {
-            "evaluation_date": str(risk_pack.base_result.date),
-            "base_decision": risk_pack.base_result.decision,
-            "base_delta_netback_adj_usd": round(risk_pack.base_result.delta_netback_adj_usd, 2),
-            "worst_case_pnl_impact_usd": round(risk_pack.worst_case_pnl_impact, 2),
-            "scenarios_causing_decision_flip": risk_pack.scenarios_causing_flip,
-            "stress_scenarios": []
-        }
-        
-        for sr in risk_pack.stress_results:
-            report["stress_scenarios"].append({
-                "scenario_name": sr.scenario.name,
-                "spread_shock_usd": sr.scenario.spread_shock_usd,
-                "freight_shock_usd_day": sr.scenario.freight_shock_usd_day,
-                "eua_shock_usd": sr.scenario.eua_shock_usd,
-                "pnl_impact_usd": round(sr.pnl_impact_usd, 2),
-                "stressed_delta_netback_adj_usd": round(sr.stressed_delta_netback_adj, 2),
-                "decision_flipped": sr.decision_change,
-                "stressed_decision": sr.stressed_decision
-            })
-        
-        if save:
-            timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"risk_report_{timestamp_str}.json"
-            
-            with open(self.output_dir / filename, "w") as f:
-                json.dump(report, f, indent=2)
-            
-            print(f"Risk report saved to: {self.output_dir / filename}")
-        
-        return report
+    json_data = json.dumps(_to_json_serializable(pack), indent=2, default=str)
+    filepath.write_text(json_data)
     
-    def generate_backtest_report(
-        self,
-        backtest_result: BacktestResult,
-        save: bool = True
-    ) -> dict:
-        """Generate backtest report as dict and optionally save to file."""
-        metrics = backtest_result.metrics
-        
-        report = {
-            "backtest_summary": {
-                "total_observations": metrics.total_observations,
-                "triggered_trades": metrics.triggered_trades,
-                "hit_rate_pct": round(metrics.hit_rate * 100, 2),
-                "average_uplift_usd": round(metrics.average_uplift_usd, 2),
-                "total_uplift_usd": round(metrics.total_uplift_usd, 2),
-                "max_drawdown_usd": round(metrics.max_drawdown_usd, 2),
-                "sharpe_ratio": round(metrics.sharpe_ratio, 3) if metrics.sharpe_ratio else None
-            },
-            "equity_curve": backtest_result.equity_curve.to_dict(orient="records")
-        }
-        
-        if save:
-            timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"backtest_report_{timestamp_str}.json"
-            
-            with open(self.output_dir / filename, "w") as f:
-                json.dump(report, f, indent=2, default=str)
-            
-            print(f"Backtest report saved to: {self.output_dir / filename}")
-            
-            # Also save equity curve as CSV
-            equity_filename = f"equity_curve_{timestamp_str}.csv"
-            backtest_result.equity_curve.to_csv(
-                self.output_dir / equity_filename,
-                index=False
-            )
-            print(f"Equity curve saved to: {self.output_dir / equity_filename}")
-        
-        return report
+    return filepath
+
+
+def save_trade_ticket_csv(pack: Dict[str, Any], *, prefix: str = "trade_ticket") -> Path:
+    """
+    Generate flat CSV trade ticket for desk review.
+    Extracts key fields from trade pack into human-readable format.
     
-    def print_summary(self, result: DecisionResult, risk_pack: Optional[RiskPack] = None):
-        """Print a formatted summary to console."""
-        print("\n" + "=" * 60)
-        print("LNG CARGO DIVERSION DECISION ENGINE - SUMMARY")
-        print("=" * 60)
+    Args:
+        pack: Trade pack from engine/run.py
+        prefix: Filename prefix (default: "trade_ticket")
+    
+    Returns:
+        Path to saved CSV file
+    """
+    REPORTS_DIR.mkdir(exist_ok=True)
+    filepath = REPORTS_DIR / f"{prefix}_{_timestamp()}.csv"
+    
+    # Extract sections from pack
+    inputs = pack["inputs"]
+    decision = pack["decision"]
+    europe = pack["europe"]
+    asia = pack["asia"]
+    hedge_legs = pack["hedge_legs"]
+    
+    # Build flat key-value rows
+    rows = [
+        ("timestamp_utc", datetime.utcnow().isoformat(timespec="seconds")),
         
-        print(f"\nEvaluation Date: {result.date}")
-        print(f"\n{'NETBACK COMPARISON':-^60}")
-        print(f"  Europe (TTF) Netback:     ${result.europe_netback.netback_usd:>15,.2f}")
-        print(f"  Asia (JKM) Netback:       ${result.asia_netback.netback_usd:>15,.2f}")
-        print(f"  ΔNetback (raw):           ${result.delta_netback_raw_usd:>15,.2f}")
-        print(f"  ΔNetback (adjusted):      ${result.delta_netback_adj_usd:>15,.2f}")
-        print(f"  Decision Buffer:          ${result.decision_buffer_usd:>15,.2f}")
+        # Route and vessel
+        ("load_port", inputs["load_port"]),
+        ("europe_port", inputs["europe_port"]),
+        ("asia_port", inputs["asia_port"]),
+        ("vessel_class", inputs["vessel_class"]),
+        ("cargo_capacity_m3", inputs["cargo_capacity_m3"]),
         
-        print(f"\n{'DECISION':-^60}")
-        decision_color = "✅" if result.decision == "DIVERT" else "🔄"
-        print(f"  {decision_color} Decision: {result.decision}")
+        # Market data (real from Yahoo Finance: TTF, EUA)
+        ("TTF_USD_MMBtu", inputs["ttf_price"]),
+        ("JKM_USD_MMBtu", inputs["jkm_price"]),
+        ("freight_USD_day", inputs["freight_rate_usd_day"]),
+        ("fuel_USD_t", inputs["fuel_price_usd_t"]),
+        ("EUA_USD_tCO2", inputs["eua_price_usd_t"]),
         
-        if result.decision == "DIVERT":
-            print(f"\n{'TRADE TICKET':-^60}")
-            print(f"  Hedge Legs:")
-            for leg in result.trade_ticket.hedge_legs:
-                print(f"    - {leg['leg']} {leg['instrument']}: {leg['lots']} lots")
-            print(f"  Hedge Energy: {result.trade_ticket.hedge_energy_mmbtu:,.0f} MMBtu")
+        # Netback comparison
+        ("europe_netback_USD", europe["netback_usd"]),
+        ("asia_netback_USD", asia["netback_usd"]),
+        ("delta_raw_USD", decision["delta_raw_usd"]),
         
-        if risk_pack:
-            print(f"\n{'RISK PACK':-^60}")
-            print(f"  Worst Case P&L Impact:    ${risk_pack.worst_case_pnl_impact:>15,.2f}")
-            if risk_pack.scenarios_causing_flip:
-                print(f"  ⚠️  Scenarios causing decision flip:")
-                for scenario in risk_pack.scenarios_causing_flip:
-                    print(f"      - {scenario}")
-            else:
-                print(f"  ✅ No scenarios cause decision flip")
+        # Decision parameters
+        ("basis_haircut", inputs["basis_haircut_pct"]),
+        ("ops_buffer_USD", inputs["ops_buffer_usd"]),
+        ("decision_buffer_USD", inputs["decision_buffer_usd"]),
+        ("delta_adj_USD", decision["delta_adj_usd"]),
         
-        print("\n" + "=" * 60)
+        # Final decision and hedging
+        ("decision", decision["decision"]),
+        ("hedge_energy_MMBtu", decision["hedge_energy_mmbtu"]),
+        ("hedge_leg_1", f"{hedge_legs[0]['leg']} {hedge_legs[0]['lots']} lots"),
+        ("hedge_leg_2", f"{hedge_legs[1]['leg']} {hedge_legs[1]['lots']} lots"),
+    ]
+    
+    # Write CSV
+    with filepath.open("w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["field", "value"])
+        writer.writerows(rows)
+    
+    return filepath
+
+
+def save_stress_csv(stress_rows: List[Dict[str, Any]], *, prefix: str = "stress_pack") -> Path:
+    """
+    Save stress test results as CSV with one row per scenario.
+    
+    Args:
+        stress_rows: List of stress test scenarios with results
+        prefix: Filename prefix (default: "stress_pack")
+    
+    Returns:
+        Path to saved CSV file
+    """
+    REPORTS_DIR.mkdir(exist_ok=True)
+    filepath = REPORTS_DIR / f"{prefix}_{_timestamp()}.csv"
+    
+    # Handle empty results
+    if not stress_rows:
+        filepath.write_text("")
+        return filepath
+    
+    # Write all scenarios
+    columns = list(stress_rows[0].keys())
+    with filepath.open("w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=columns)
+        writer.writeheader()
+        writer.writerows(stress_rows)
+    
+    return filepath

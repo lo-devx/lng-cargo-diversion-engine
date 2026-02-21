@@ -9,7 +9,7 @@ from .netback import NetbackCalculator, NetbackResult, VoyageDetails
 from .decision import DecisionResult, decide_and_size
 from .risk import RiskAnalyzer, RiskPack, StressResult, StressScenario
 from .backtest import Backtester, BacktestResult, BacktestMetrics
-from .reports import ReportGenerator
+from .reports import save_trade_pack, save_trade_ticket_csv, save_stress_csv
 
 __all__ = [
     "DataLoader",
@@ -28,5 +28,7 @@ __all__ = [
     "Backtester",
     "BacktestResult",
     "BacktestMetrics",
-    "ReportGenerator"
+    "save_trade_pack",
+    "save_trade_ticket_csv",
+    "save_stress_csv"
 ]

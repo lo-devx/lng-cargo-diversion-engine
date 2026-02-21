@@ -94,3 +94,27 @@ def load_config() -> Dict[str, float]:
     validate_config(params)
     return params
 
+
+def load_benchmark_prices() -> pd.DataFrame:
+    """
+    Load historical benchmark prices for backtesting.
+    
+    Returns:
+        DataFrame with columns: date, TTF_USD_MMBTU, JKM_USD_MMBTU
+    """
+    df = pd.read_csv(DATA_DIR / "benchmark_prices.csv")
+    df["date"] = pd.to_datetime(df["date"])
+    return df
+
+
+def load_aux_series() -> pd.DataFrame:
+    """
+    Load auxiliary time series for backtesting (freight, fuel, EUA).
+    
+    Returns:
+        DataFrame with columns: date, FREIGHT_USD_DAY, FUEL_USD_PER_T, EUA_USD_PER_TCO2
+    """
+    df = pd.read_csv(DATA_DIR / "aux_series.csv")
+    df["date"] = pd.to_datetime(df["date"])
+    return df
+
