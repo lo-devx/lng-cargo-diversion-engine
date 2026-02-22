@@ -449,9 +449,9 @@ fuel = fetch_bunker_prices("VLSFO", "Singapore")
 ![Dashboard Stress Testing](docs/screenshots/2-dashboard-stress-pack.png)
 *Stress test scenarios showing decision robustness under spread collapse, freight spikes, and carbon shocks*
 
-### 3. Dashboard - Historical Validation (Backtest)
+### 3. Dashboard - Historical Rule Validation (Backtest)
 ![Dashboard Backtest Results](docs/screenshots/3-dashboard-backtest-equity.png)
-*Performance metrics (hit rate, Sharpe ratio, total uplift) and equity curve from 530+ days of historical data*
+*Performance metrics (Average conditional uplift) and equity curve from 530+ days of historical data*
 
 ### 4. CLI - Trade Note Output
 ![CLI Trade Note](docs/screenshots/4-cli-trade-note.png)
