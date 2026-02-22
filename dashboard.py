@@ -1,38 +1,14 @@
 """
-LNG Cargo Diversion Decision Engine - Dash Dashboard
+LNG Cargo Diversion Decision Engine - Terminal Dashboard
 
-=== WHAT THIS DOES (IN SIMPLE TERMS) ===
+FINANCIAL TERMINAL UI
+- Dark mode with monospace fonts
+- Data-dense institutional layout
+- Terminal-style information compression
+- Desk screen aesthetic
 
-Imagine you have a ship full of LNG (liquefied natural gas) leaving the US Gulf Coast.
-You need to decide: should you sell it in Europe (Rotterdam) or divert to Asia (Tokyo)?
-
-This dashboard helps make that decision by:
-
-1. COMPARING THE MONEY: 
-   - Calculates how much profit you'd make selling in Europe vs Asia
-   - Takes into account: gas prices, shipping costs, fuel, and carbon taxes
-   - Shows you the "uplift" = extra profit if you divert to Asia
-
-2. SHOWING TODAY'S CALL:
-   - DIVERT = Asia is more profitable (after accounting for risks)
-   - KEEP = Europe is better (or Asia margin too thin)
-
-3. TELLING YOU THE HEDGE:
-   - If you divert, you need to hedge the price risk
-   - Shows exact trades: "BUY JKM 322 lots, SELL TTF 322 lots"
-
-4. STRESS TESTING:
-   - What if spreads collapse? Freight spikes? Carbon costs jump?
-   - Shows if your decision still holds under bad scenarios
-
-5. PROVING IT WORKS:
-   - Backtests the rule on 2+ years of real market data
-   - Shows cumulative profit, hit rate, and risk-adjusted returns
-
-Think of it as: "GPS for cargo routing" + "Risk calculator" + "Historical proof"
-
-Run with: python dashboard.py
-Access at: http://127.0.0.1:8050
+Run with: python dashboard_terminal.py
+Access at: http://127.0.0.1:8051
 """
 
 import dash
@@ -51,11 +27,11 @@ from engine.backtest import Backtester
 from types import SimpleNamespace
 
 
-# Initialize Dash app with Bootstrap
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-app.title = "LNG Diversion Engine"
+# Initialize Dash app with dark theme
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
+app.title = "LNG Terminal | DevX"
 
-# Custom CSS for better aesthetics
+# Terminal-style CSS - Bloomberg/Reuters inspired
 app.index_string = '''
 <!DOCTYPE html>
 <html>
@@ -65,89 +41,357 @@ app.index_string = '''
         {%favicon%}
         {%css%}
         <style>
+            @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap');
+            
+            :root {
+                --terminal-bg: #0a0e1a;
+                --terminal-bg-secondary: #111827;
+                --terminal-border: #1f2937;
+                --terminal-text: #e5e7eb;
+                --terminal-text-dim: #9ca3af;
+                --terminal-green: #10b981;
+                --terminal-red: #ef4444;
+                --terminal-amber: #f59e0b;
+                --terminal-blue: #3b82f6;
+                --terminal-cyan: #06b6d4;
+                --grid-border: #1f2937;
+            }
+            
             body {
-                background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
-                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                min-height: 100vh;
+                background-color: var(--terminal-bg);
+                color: var(--terminal-text);
+                font-family: 'Roboto Mono', 'Courier New', monospace;
+                font-size: 12px;
+                line-height: 1.4;
+                margin: 0;
+                padding: 0;
+                overflow-x: hidden;
             }
+            
+            /* Remove all card styling - flat terminal look */
             .card {
-                background: rgba(255, 255, 255, 0.98);
-                backdrop-filter: blur(20px);
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                border-radius: 16px;
-                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-                transition: transform 0.2s, box-shadow 0.2s;
+                background-color: var(--terminal-bg-secondary);
+                border: 1px solid var(--terminal-border);
+                border-radius: 0;
+                box-shadow: none;
+                margin-bottom: 8px;
             }
-            .card:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
+            
+            .card-body {
+                padding: 12px;
             }
-            h1 {
-                font-weight: 700;
-                letter-spacing: -1px;
-                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-            }
-            h2, h3, h4, h5 {
+            
+            /* Header bar - like Bloomberg terminal top bar */
+            .terminal-header {
+                background-color: #000000;
+                border-bottom: 2px solid var(--terminal-amber);
+                padding: 8px 16px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
                 font-weight: 600;
+                letter-spacing: 1px;
             }
-            .badge {
+            
+            .terminal-title {
+                color: var(--terminal-amber);
+                font-size: 14px;
                 font-weight: 700;
+                letter-spacing: 2px;
+            }
+            
+            .terminal-subtitle {
+                color: var(--terminal-text-dim);
+                font-size: 10px;
+                font-weight: 400;
+            }
+            
+            .terminal-timestamp {
+                color: var(--terminal-cyan);
+                font-size: 11px;
+            }
+            
+            /* Section headers - minimal terminal style */
+            .section-header {
+                background-color: var(--terminal-border);
+                border-left: 3px solid var(--terminal-cyan);
+                padding: 6px 12px;
+                margin-bottom: 8px;
+                font-size: 11px;
+                font-weight: 600;
                 letter-spacing: 1.5px;
-                padding: 16px 32px !important;
-                border-radius: 12px;
-                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+                text-transform: uppercase;
+                color: var(--terminal-cyan);
             }
+            
+            /* Decision badge - terminal style */
+            .decision-badge {
+                font-family: 'Roboto Mono', monospace;
+                font-size: 18px;
+                font-weight: 700;
+                padding: 8px 24px;
+                border-radius: 0;
+                letter-spacing: 3px;
+                border: 2px solid;
+                display: inline-block;
+                text-transform: uppercase;
+            }
+            
+            .decision-divert {
+                background-color: transparent;
+                color: var(--terminal-green);
+                border-color: var(--terminal-green);
+                box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+            }
+            
+            .decision-keep {
+                background-color: transparent;
+                color: var(--terminal-amber);
+                border-color: var(--terminal-amber);
+                box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+            }
+            
+            /* Data tables - dense terminal grid */
             .table {
-                border-radius: 8px;
-                overflow: hidden;
+                font-size: 11px;
+                margin-bottom: 0;
+                border-collapse: collapse;
             }
+            
             .table thead th {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
+                background-color: var(--terminal-border);
+                color: var(--terminal-text-dim);
                 font-weight: 600;
-                border: none;
-                padding: 14px;
+                text-transform: uppercase;
+                font-size: 10px;
+                letter-spacing: 1px;
+                padding: 6px 8px;
+                border: 1px solid var(--grid-border);
             }
-            .table-hover tbody tr:hover {
-                background-color: rgba(102, 126, 234, 0.08);
+            
+            .table tbody td {
+                padding: 4px 8px;
+                border: 1px solid var(--grid-border);
+                background-color: var(--terminal-bg-secondary);
             }
-            hr {
-                border-color: rgba(255, 255, 255, 0.2);
-                opacity: 0.3;
+            
+            .table tbody tr:hover {
+                background-color: rgba(59, 130, 246, 0.1);
             }
-            /* Animated gradient text */
-            .hero-text {
-                background: linear-gradient(45deg, #fff, #e0e7ff, #fff);
-                background-size: 200% 200%;
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                animation: gradient 3s ease infinite;
+            
+            /* Monospace numbers with alignment */
+            .mono-number {
+                font-family: 'Roboto Mono', monospace;
+                font-variant-numeric: tabular-nums;
+                text-align: right;
+                font-weight: 500;
             }
-            @keyframes gradient {
-                0% { background-position: 0% 50%; }
-                50% { background-position: 100% 50%; }
-                100% { background-position: 0% 50%; }
+            
+            /* Color coding for positive/negative */
+            .positive {
+                color: var(--terminal-green);
             }
-            /* Custom scrollbar */
+            
+            .negative {
+                color: var(--terminal-red);
+            }
+            
+            .neutral {
+                color: var(--terminal-text-dim);
+            }
+            
+            /* Market data ticker style */
+            .market-ticker {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 8px;
+                margin-bottom: 8px;
+            }
+            
+            .ticker-item {
+                background-color: var(--terminal-bg-secondary);
+                border: 1px solid var(--terminal-border);
+                border-left: 2px solid var(--terminal-blue);
+                padding: 6px 10px;
+            }
+            
+            .ticker-label {
+                font-size: 9px;
+                color: var(--terminal-text-dim);
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                display: block;
+                margin-bottom: 2px;
+            }
+            
+            .ticker-value {
+                font-size: 13px;
+                font-weight: 600;
+                color: var(--terminal-text);
+                font-variant-numeric: tabular-nums;
+            }
+            
+            .ticker-unit {
+                font-size: 9px;
+                color: var(--terminal-text-dim);
+                margin-left: 4px;
+            }
+            
+            /* Stats grid - data dense */
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                gap: 8px;
+                margin-bottom: 8px;
+            }
+            
+            .stat-box {
+                background-color: var(--terminal-bg-secondary);
+                border: 1px solid var(--terminal-border);
+                padding: 8px 10px;
+            }
+            
+            .stat-label {
+                font-size: 9px;
+                color: var(--terminal-text-dim);
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 4px;
+            }
+            
+            .stat-value {
+                font-size: 16px;
+                font-weight: 700;
+                font-variant-numeric: tabular-nums;
+            }
+            
+            /* Hedge instructions - terminal command style */
+            .hedge-command {
+                background-color: #000000;
+                border: 1px solid var(--terminal-green);
+                padding: 10px 12px;
+                font-family: 'Roboto Mono', monospace;
+                font-size: 12px;
+                color: var(--terminal-green);
+                margin: 8px 0;
+                letter-spacing: 0.5px;
+            }
+            
+            .hedge-command::before {
+                content: '> ';
+                color: var(--terminal-cyan);
+            }
+            
+            /* Plotly charts - dark theme integration */
+            .js-plotly-plot {
+                background-color: transparent !important;
+            }
+            
+            /* Remove Bootstrap padding */
+            .container-fluid {
+                padding: 0;
+                max-width: 100%;
+            }
+            
+            .row {
+                margin: 0;
+            }
+            
+            .col, [class^="col-"] {
+                padding: 4px;
+            }
+            
+            /* Scrollbar - terminal style */
             ::-webkit-scrollbar {
-                width: 10px;
+                width: 8px;
+                height: 8px;
             }
+            
             ::-webkit-scrollbar-track {
-                background: rgba(255, 255, 255, 0.1);
+                background: var(--terminal-bg);
             }
+            
             ::-webkit-scrollbar-thumb {
-                background: rgba(255, 255, 255, 0.3);
-                border-radius: 5px;
+                background: var(--terminal-border);
+                border-radius: 0;
             }
+            
             ::-webkit-scrollbar-thumb:hover {
-                background: rgba(255, 255, 255, 0.5);
+                background: var(--terminal-text-dim);
             }
-            /* Stats cards */
-            .stat-card {
-                background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-                border-radius: 12px;
-                padding: 20px;
-                border-left: 4px solid #667eea;
+            
+            /* Data provenance tag */
+            .provenance-tag {
+                display: inline-block;
+                font-size: 8px;
+                padding: 2px 6px;
+                border-radius: 2px;
+                margin-left: 6px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            
+            .provenance-real {
+                background-color: rgba(16, 185, 129, 0.2);
+                color: var(--terminal-green);
+                border: 1px solid var(--terminal-green);
+            }
+            
+            .provenance-proxy {
+                background-color: rgba(245, 158, 11, 0.2);
+                color: var(--terminal-amber);
+                border: 1px solid var(--terminal-amber);
+            }
+            
+            /* Stress test result indicators */
+            .stress-flip {
+                background-color: rgba(239, 68, 68, 0.2);
+                color: var(--terminal-red);
+                padding: 2px 6px;
+                font-size: 9px;
+                font-weight: 700;
+                border: 1px solid var(--terminal-red);
+            }
+            
+            .stress-hold {
+                background-color: rgba(16, 185, 129, 0.2);
+                color: var(--terminal-green);
+                padding: 2px 6px;
+                font-size: 9px;
+                font-weight: 700;
+                border: 1px solid var(--terminal-green);
+            }
+            
+            /* Footer bar */
+            .terminal-footer {
+                background-color: #000000;
+                border-top: 1px solid var(--terminal-border);
+                padding: 6px 16px;
+                font-size: 9px;
+                color: var(--terminal-text-dim);
+                text-align: center;
+            }
+            
+            /* Blink animation for live indicator */
+            @keyframes blink {
+                0%, 50% { opacity: 1; }
+                51%, 100% { opacity: 0.3; }
+            }
+            
+            .live-indicator {
+                display: inline-block;
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background-color: var(--terminal-green);
+                margin-right: 6px;
+                animation: blink 2s infinite;
+            }
+            
+            /* Remove all rounded corners for terminal look */
+            * {
+                border-radius: 0 !important;
             }
         </style>
     </head>
@@ -198,35 +442,79 @@ def load_live_decision():
 
 
 def load_stress_results(delta_adj, decision):
-    """Load stress test results - simplified to show scenarios only."""
-    config = load_config()
-    
-    # Create mock stress pack with typical scenarios
-    # In a full implementation, this would call RiskAnalyzer
-    scenarios = [
-        {"name": "Base Case", "delta_adj_usd": delta_adj, "decision": decision},
-        {"name": "Spread Collapse (-$2.50)", "delta_adj_usd": delta_adj - 2500000, "decision": "DIVERT" if delta_adj - 2500000 > 500000 else "KEEP"},
-        {"name": "Spread Widen (+$2.50)", "delta_adj_usd": delta_adj + 2500000, "decision": "DIVERT"},
-        {"name": "Freight Spike (+$10k/day)", "delta_adj_usd": delta_adj - 400000, "decision": "DIVERT" if delta_adj - 400000 > 500000 else "KEEP"},
-        {"name": "EUA Spike (+$10/t)", "delta_adj_usd": delta_adj - 200000, "decision": "DIVERT" if delta_adj - 200000 > 500000 else "KEEP"},
-        {"name": "Worst Case Combined", "delta_adj_usd": delta_adj - 3100000, "decision": "DIVERT" if delta_adj - 3100000 > 500000 else "KEEP"},
-    ]
-    
-    worst_case = min(s["delta_adj_usd"] for s in scenarios)
-    
-    return SimpleNamespace(scenarios=scenarios, worst_case_pnl=worst_case)
-
-
-def load_backtest_results():
-    """Load backtest results."""
+    """Load stress test results."""
     routes = load_routes()
     vessels = load_vessels()
     carbon_params = load_carbon_params()
     config = load_config()
     
-    benchmark_prices = load_benchmark_prices()
+    trade_pack, market_snapshot, _ = load_live_decision()
+    
+    # Create NetbackCalculator
+    from engine.netback import NetbackCalculator
+    calculator = NetbackCalculator(routes, vessels, carbon_params)
+    
+    # Use RiskAnalyzer with proper parameters
+    analyzer = RiskAnalyzer(
+        netback_calculator=calculator,
+        stress_spread_usd=float(config["STRESS_SPREAD_USD"]),
+        stress_freight_usd_per_day=float(config["STRESS_FREIGHT_USD_PER_DAY"]),
+        stress_eua_usd=float(config["STRESS_EUA_USD"]),
+        basis_haircut_pct=float(config["BASIS_ADJUSTMENT"]),
+        ops_buffer_usd=float(config["OPS_BUFFER_USD"]),
+        decision_buffer_usd=float(config["DECISION_BUFFER_USD"])
+    )
+    
+    # Extract base result from trade_pack
+    from engine.decision import DecisionResult
+    base_result = DecisionResult(
+        delta_netback_raw_usd=trade_pack["decision"]["delta_raw_usd"],
+        delta_netback_adj_usd=trade_pack["decision"]["delta_adj_usd"],
+        basis_haircut_pct=trade_pack["inputs"]["basis_haircut_pct"],
+        ops_buffer_usd=trade_pack["inputs"]["ops_buffer_usd"],
+        decision_buffer_usd=trade_pack["inputs"]["decision_buffer_usd"],
+        decision=trade_pack["decision"]["decision"],
+        hedge_energy_mmbtu=trade_pack["decision"]["hedge_energy_mmbtu"],
+        lots_ttf=trade_pack["decision"]["lots_ttf"],
+        lots_jkm=trade_pack["decision"]["lots_jkm"]
+    )
+    
+    risk_pack = analyzer.run_stress_test(
+        base_result=base_result,
+        load_port=trade_pack["inputs"]["load_port"],
+        europe_port=trade_pack["inputs"]["europe_port"],
+        asia_port=trade_pack["inputs"]["asia_port"],
+        vessel_class=trade_pack["inputs"]["vessel_class"],
+        cargo_capacity_m3=trade_pack["inputs"]["cargo_capacity_m3"],
+        ttf_price=trade_pack["inputs"]["ttf_price"],
+        jkm_price=trade_pack["inputs"]["jkm_price"],
+        freight_rate_usd_day=trade_pack["inputs"]["freight_rate_usd_day"],
+        fuel_price_usd_t=trade_pack["inputs"]["fuel_price_usd_t"],
+        eua_price_usd_t=trade_pack["inputs"]["eua_price_usd_t"]
+    )
+    
+    # Convert to list format for table display
+    stress_results = []
+    for result in risk_pack.stress_results:
+        stress_results.append({
+            "scenario": result.scenario.name,
+            "decision": result.stressed_decision,
+            "delta_adj_usd": result.stressed_delta_netback_adj,
+            "flipped": result.decision_change
+        })
+    
+    return stress_results
+
+
+def load_backtest_results():
+    """Load backtest results with equity curve."""
+    routes = load_routes()
+    vessels = load_vessels()
+    carbon_params = load_carbon_params()
+    config = load_config()
+    df_prices = load_benchmark_prices()
     aux_series = load_aux_series()
-    historical_data = benchmark_prices.merge(aux_series, on="date")
+    historical_data = df_prices.merge(aux_series, on="date")
     
     results = []
     for _, row in historical_data.iterrows():
@@ -266,447 +554,411 @@ def load_backtest_results():
         results.append(result)
     
     backtester = Backtester()
-    backtest_result = backtester.run_backtest(results)
+    bt_results = backtester.run_backtest(results)
     
-    return backtest_result
+    return bt_results
 
 
-# Load backtest data at server startup (expensive operation - cache it)
-print("Loading backtest data (this takes a moment)...")
-backtest_result = load_backtest_results()
-print("Backtest loaded!")
+def create_terminal_header():
+    """Create Bloomberg-style terminal header."""
+    now = datetime.now()
+    return html.Div([
+        html.Div([
+            html.Span("LNG DIVERSION ENGINE", className="terminal-title"),
+            html.Span(" | USGLF→RTM/TYO", className="terminal-subtitle")
+        ], style={"display": "flex", "alignItems": "center", "gap": "12px"}),
+        html.Div([
+            html.Span(className="live-indicator"),
+            html.Span(f"{now.strftime('%Y-%m-%d %H:%M:%S UTC')}", className="terminal-timestamp")
+        ], style={"display": "flex", "alignItems": "center"})
+    ], className="terminal-header")
 
 
-# ============================================================================
-# SECTION 1: TODAY'S DECISION - Dynamic
-# ============================================================================
-
-section_1 = html.Div(id="section-1-content")
-
-
-# ============================================================================
-# SECTION 2: TRADE TICKET - Dynamic
-# ============================================================================
-
-section_2 = html.Div(id="section-2-content")
-
-
-# ============================================================================
-# SECTION 3: RISK (Stress Pack) - Dynamic
-# ============================================================================
-
-section_3 = html.Div(id="section-3-content")
-
-
-# ============================================================================
-# SECTION 4: HISTORICAL VALIDATION
-# ============================================================================
-
-# Build equity curve chart
-equity_fig = go.Figure()
-equity_fig.add_trace(go.Scatter(
-    x=backtest_result.equity_curve["date"],
-    y=backtest_result.equity_curve["cumulative_pnl"],
-    mode='lines',
-    name='Cumulative P&L',
-    line=dict(color='#667eea', width=3),
-    fill='tozeroy',
-    fillcolor='rgba(102, 126, 234, 0.15)',
-    hovertemplate='<b>%{x}</b><br>P&L: $%{y:,.0f}<extra></extra>'
-))
-
-equity_fig.update_layout(
-    title="Equity Curve (Since Jan 2024)",
-    xaxis_title="Date",
-    yaxis_title="Cumulative P&L (USD)",
-    hovermode='x unified',
-    template='plotly_white',
-    height=450,
-    margin=dict(l=20, r=20, t=40, b=20),
-    plot_bgcolor='rgba(0,0,0,0)',
-    paper_bgcolor='rgba(0,0,0,0)',
-    font=dict(family='Inter, sans-serif', size=12),
-    xaxis=dict(gridcolor='rgba(0,0,0,0.05)'),
-    yaxis=dict(gridcolor='rgba(0,0,0,0.05)')
-)
-
-metrics = backtest_result.metrics
-
-section_4 = dbc.Card([
-    dbc.CardBody([
-        html.H4("RULE VALIDATION", className="text-muted mb-4"),
+def create_market_ticker(market_snapshot):
+    """Create market data ticker - terminal style."""
+    return html.Div([
+        html.Div([
+            html.Span("TTF", className="ticker-label"),
+            html.Div([
+                html.Span(f"${market_snapshot.ttf_usd_mmbtu:.2f}", className="ticker-value"),
+                html.Span("/MMBtu", className="ticker-unit"),
+                html.Span("REAL" if market_snapshot.provenance.get("TTF") == "real" else "PROXY", 
+                         className=f"provenance-tag provenance-{market_snapshot.provenance.get('TTF', 'proxy')}")
+            ])
+        ], className="ticker-item"),
         
-        dbc.Row([
-            dbc.Col([
+        html.Div([
+            html.Span("JKM", className="ticker-label"),
+            html.Div([
+                html.Span(f"${market_snapshot.jkm_usd_mmbtu:.2f}", className="ticker-value"),
+                html.Span("/MMBtu", className="ticker-unit"),
+                html.Span("REAL" if market_snapshot.provenance.get("JKM") == "real" else "PROXY", 
+                         className=f"provenance-tag provenance-{market_snapshot.provenance.get('JKM', 'proxy')}")
+            ])
+        ], className="ticker-item"),
+        
+        html.Div([
+            html.Span("EUA", className="ticker-label"),
+            html.Div([
+                html.Span(f"${market_snapshot.eua_usd_per_tco2:.2f}", className="ticker-value"),
+                html.Span("/tCO₂", className="ticker-unit"),
+                html.Span("REAL" if market_snapshot.provenance.get("EUA") == "real" else "PROXY", 
+                         className=f"provenance-tag provenance-{market_snapshot.provenance.get('EUA', 'proxy')}")
+            ])
+        ], className="ticker-item"),
+        
+        html.Div([
+            html.Span("FREIGHT", className="ticker-label"),
+            html.Div([
+                html.Span(f"${market_snapshot.freight_usd_day/1000:.0f}K", className="ticker-value"),
+                html.Span("/day", className="ticker-unit"),
+                html.Span("PROXY", className="provenance-tag provenance-proxy")
+            ])
+        ], className="ticker-item"),
+        
+        html.Div([
+            html.Span("FUEL", className="ticker-label"),
+            html.Div([
+                html.Span(f"${market_snapshot.fuel_usd_per_t:.0f}", className="ticker-value"),
+                html.Span("/tonne", className="ticker-unit"),
+                html.Span("PROXY", className="provenance-tag provenance-proxy")
+            ])
+        ], className="ticker-item"),
+        
+        html.Div([
+            html.Span("SPREAD", className="ticker-label"),
+            html.Div([
+                html.Span(f"${market_snapshot.jkm_usd_mmbtu - market_snapshot.ttf_usd_mmbtu:.2f}", 
+                         className=f"ticker-value {'positive' if market_snapshot.jkm_usd_mmbtu > market_snapshot.ttf_usd_mmbtu else 'negative'}"),
+                html.Span("/MMBtu", className="ticker-unit")
+            ])
+        ], className="ticker-item")
+    ], className="market-ticker")
+
+
+def create_decision_section(trade_pack):
+    """Create decision display - terminal command style."""
+    decision = trade_pack["decision"]["decision"]
+    delta_adj = trade_pack["decision"]["delta_adj_usd"]
+    
+    decision_class = "decision-divert" if decision == "DIVERT" else "decision-keep"
+    
+    return html.Div([
+        html.Div("SECTION 1 | DECISION", className="section-header"),
+        html.Div([
+            html.Span(decision, className=f"decision-badge {decision_class}"),
+            html.Div([
+                html.Span("ADJUSTED UPLIFT: ", style={"color": "var(--terminal-text-dim)", "fontSize": "11px"}),
+                html.Span(f"${delta_adj/1e6:.2f}M", 
+                         style={"fontSize": "18px", "fontWeight": "700", 
+                                "color": "var(--terminal-green)" if delta_adj > 0 else "var(--terminal-red)"})
+            ], style={"marginTop": "12px"})
+        ], style={"padding": "16px 0", "textAlign": "center"})
+    ], className="card")
+
+
+def create_netback_table(trade_pack):
+    """Create netback comparison - dense terminal grid."""
+    europe = trade_pack["europe"]
+    asia = trade_pack["asia"]
+    
+    return html.Div([
+        html.Div("SECTION 2 | NETBACK ANALYSIS", className="section-header"),
+        html.Table([
+            html.Thead([
+                html.Tr([
+                    html.Th("ITEM", style={"textAlign": "left"}),
+                    html.Th("EUROPE", className="mono-number"),
+                    html.Th("ASIA", className="mono-number"),
+                    html.Th("DELTA", className="mono-number")
+                ])
+            ]),
+            html.Tbody([
+                html.Tr([
+                    html.Td("Revenue"),
+                    html.Td(f"${europe['revenue_usd']/1e6:.2f}M", className="mono-number"),
+                    html.Td(f"${asia['revenue_usd']/1e6:.2f}M", className="mono-number"),
+                    html.Td(f"${(asia['revenue_usd'] - europe['revenue_usd'])/1e6:.2f}M", 
+                           className=f"mono-number {'positive' if asia['revenue_usd'] > europe['revenue_usd'] else 'negative'}")
+                ]),
+                html.Tr([
+                    html.Td("Voyage Cost"),
+                    html.Td(f"-${europe['voyage_cost_usd']/1e6:.2f}M", className="mono-number negative"),
+                    html.Td(f"-${asia['voyage_cost_usd']/1e6:.2f}M", className="mono-number negative"),
+                    html.Td(f"-${(asia['voyage_cost_usd'] - europe['voyage_cost_usd'])/1e6:.2f}M", 
+                           className="mono-number negative")
+                ]),
+                html.Tr([
+                    html.Td("Carbon Cost"),
+                    html.Td(f"-${europe['carbon_cost_usd']/1e6:.2f}M", className="mono-number negative"),
+                    html.Td(f"-${asia['carbon_cost_usd']/1e6:.2f}M", className="mono-number negative"),
+                    html.Td(f"-${(asia['carbon_cost_usd'] - europe['carbon_cost_usd'])/1e6:.2f}M", 
+                           className="mono-number negative")
+                ]),
+                html.Tr([
+                    html.Td("NETBACK", style={"fontWeight": "700"}),
+                    html.Td(f"${europe['netback_usd']/1e6:.2f}M", className="mono-number positive", style={"fontWeight": "700"}),
+                    html.Td(f"${asia['netback_usd']/1e6:.2f}M", className="mono-number positive", style={"fontWeight": "700"}),
+                    html.Td(f"${(asia['netback_usd'] - europe['netback_usd'])/1e6:.2f}M", 
+                           className=f"mono-number {'positive' if asia['netback_usd'] > europe['netback_usd'] else 'negative'}", 
+                           style={"fontWeight": "700"})
+                ])
+            ])
+        ], className="table")
+    ], className="card")
+
+
+def create_hedge_instructions(trade_pack):
+    """Create hedge instructions - terminal command style."""
+    decision_data = trade_pack["decision"]
+    hedge_legs = trade_pack["hedge_legs"]
+    coverage_pct = trade_pack["inputs"]["coverage_pct"]
+    ttf_price = trade_pack["inputs"]["ttf_price"]
+    jkm_price = trade_pack["inputs"]["jkm_price"]
+    
+    lots_jkm = decision_data["lots_jkm"]
+    lots_ttf = decision_data["lots_ttf"]
+    hedge_energy = decision_data["hedge_energy_mmbtu"]
+    
+    # Calculate notionals
+    jkm_notional = lots_jkm * 10000 * jkm_price
+    ttf_notional = lots_ttf * 10000 * ttf_price
+    
+    return html.Div([
+        html.Div("SECTION 3 | HEDGE EXECUTION", className="section-header"),
+        html.Div([
+            html.Div(f"{hedge_legs[0]['leg'].upper()} {abs(hedge_legs[0]['lots']):,.0f} LOTS @ MARKET", 
+                    className="hedge-command"),
+            html.Div(f"{hedge_legs[1]['leg'].upper()} {abs(hedge_legs[1]['lots']):,.0f} LOTS @ MARKET", 
+                    className="hedge-command"),
+            html.Div([
                 html.Div([
-                    html.H6("Observation Period", className="text-muted mb-2"),
-                    html.H3(f"{metrics.total_observations} days", className="mb-0", style={'color': '#667eea'}),
-                    html.P("Jan 2024 - Feb 2026", className="text-muted mb-0", style={'fontSize': '12px'})
-                ], className="stat-card")
-            ], width=6),
-            dbc.Col([
+                    html.Span("Coverage:", className="stat-label"),
+                    html.Div(f"{coverage_pct*100:.0f}%", className="stat-value")
+                ], className="stat-box"),
                 html.Div([
-                    html.H6("Avg Conditional Uplift", className="text-muted mb-2"),
-                    html.H3(f"${metrics.average_uplift_usd/1e6:.1f}M", className="mb-0", style={'color': '#f59e0b'}),
-                    html.P("Per trigger (after buffers)", className="text-muted mb-0", style={'fontSize': '12px'})
-                ], className="stat-card")
-            ], width=6),
-        ], className="mb-4"),
-        
-        dcc.Graph(figure=equity_fig),
-        
-        html.P([
-            "⚠️ This validates trigger frequency and conditional uplift. ",
-            html.Strong("Not a trading performance backtest."),
-            " Actual P&L would include execution slippage, basis risk, and hedging costs."
-        ], className="text-muted text-center mt-3", style={'fontSize': '12px'})
-    ])
-], className="mb-4 shadow")
+                    html.Span("JKM Notional:", className="stat-label"),
+                    html.Div(f"${abs(jkm_notional)/1e6:.1f}M", className="stat-value positive")
+                ], className="stat-box"),
+                html.Div([
+                    html.Span("TTF Notional:", className="stat-label"),
+                    html.Div(f"${abs(ttf_notional)/1e6:.1f}M", className="stat-value negative")
+                ], className="stat-box")
+            ], className="stats-grid")
+        ])
+    ], className="card")
 
 
-# ============================================================================
-# SECTION 5: ANALYTICS CHARTS (Dynamic)
-# ============================================================================
+def create_stress_table(stress_results):
+    """Create stress test table - dense grid."""
+    return html.Div([
+        html.Div("SECTION 4 | STRESS TESTING", className="section-header"),
+        html.Table([
+            html.Thead([
+                html.Tr([
+                    html.Th("SCENARIO", style={"textAlign": "left"}),
+                    html.Th("DECISION", className="mono-number"),
+                    html.Th("ADJ UPLIFT", className="mono-number"),
+                    html.Th("STATUS", style={"textAlign": "center"})
+                ])
+            ]),
+            html.Tbody([
+                html.Tr([
+                    html.Td(result["scenario"]),
+                    html.Td(result["decision"], className="mono-number", 
+                           style={"color": "var(--terminal-green)" if result["decision"] == "DIVERT" else "var(--terminal-amber)"}),
+                    html.Td(f"${result['delta_adj_usd']/1e6:.2f}M", 
+                           className=f"mono-number {'positive' if result['delta_adj_usd'] > 0 else 'negative'}"),
+                    html.Td(
+                        html.Span("FLIP" if result.get("flipped", False) else "HOLD", 
+                                 className="stress-flip" if result.get("flipped", False) else "stress-hold"),
+                        style={"textAlign": "center"}
+                    )
+                ]) for result in stress_results
+            ])
+        ], className="table")
+    ], className="card")
 
-section_5 = html.Div(id="section-5-content")
+
+def create_backtest_section(bt_results):
+    """Create backtest metrics - data dense stats."""
+    total_days = len(bt_results.decision_history)
+    triggered = bt_results.decision_history['triggered'].sum()
+    avg_uplift = bt_results.decision_history[bt_results.decision_history['triggered'] == 1]['delta_netback_adj_usd'].mean()
+    total_uplift = bt_results.decision_history[bt_results.decision_history['triggered'] == 1]['delta_netback_adj_usd'].sum()
+    min_uplift = bt_results.decision_history[bt_results.decision_history['triggered'] == 1]['delta_netback_adj_usd'].min()
+    max_uplift = bt_results.decision_history[bt_results.decision_history['triggered'] == 1]['delta_netback_adj_usd'].max()
+    
+    return html.Div([
+        html.Div("SECTION 5 | RULE VALIDATION (BACKTEST)", className="section-header"),
+        html.Div([
+            html.Div([
+                html.Span("Observation Period:", className="stat-label"),
+                html.Div(f"{total_days} days", className="stat-value")
+            ], className="stat-box"),
+            html.Div([
+                html.Span("DIVERT Frequency:", className="stat-label"),
+                html.Div(f"{triggered} ({triggered/total_days*100:.1f}%)", 
+                        className="stat-value positive")
+            ], className="stat-box"),
+            html.Div([
+                html.Span("KEEP Frequency:", className="stat-label"),
+                html.Div(f"{total_days - triggered} ({(1-triggered/total_days)*100:.1f}%)", 
+                        className="stat-value neutral")
+            ], className="stat-box"),
+            html.Div([
+                html.Span("Avg Conditional Uplift:", className="stat-label"),
+                html.Div(f"${avg_uplift/1e6:.2f}M", className="stat-value positive")
+            ], className="stat-box"),
+            html.Div([
+                html.Span("Total Conditional Uplift:", className="stat-label"),
+                html.Div(f"${total_uplift/1e9:.2f}B", className="stat-value positive")
+            ], className="stat-box"),
+            html.Div([
+                html.Span("Min Uplift:", className="stat-label"),
+                html.Div(f"${min_uplift/1e6:.2f}M", className="stat-value")
+            ], className="stat-box"),
+            html.Div([
+                html.Span("Max Uplift:", className="stat-label"),
+                html.Div(f"${max_uplift/1e6:.2f}M", className="stat-value")
+            ], className="stat-box")
+        ], className="stats-grid"),
+        html.Div([
+            html.Span("⚠ ", style={"color": "var(--terminal-amber)"}),
+            html.Span("Rule validation only. Not trading P&L. Excludes execution slippage, basis risk, hedging costs.",
+                     style={"fontSize": "9px", "color": "var(--terminal-text-dim)"})
+        ], style={"marginTop": "8px", "padding": "8px", "borderLeft": "2px solid var(--terminal-amber)"})
+    ], className="card")
 
 
-# ============================================================================
-# LAYOUT
-# ============================================================================
+def create_equity_chart(bt_results):
+    """Create equity curve - terminal dark theme."""
+    df = bt_results.equity_curve
+    
+    fig = go.Figure()
+    
+    fig.add_trace(go.Scatter(
+        x=df["date"],
+        y=df["cumulative_pnl"] / 1e6,
+        mode="lines",
+        name="Cumulative Uplift",
+        line=dict(color="#10b981", width=1.5),
+        fill="tozeroy",
+        fillcolor="rgba(16, 185, 129, 0.1)"
+    ))
+    
+    fig.update_layout(
+        plot_bgcolor="#0a0e1a",
+        paper_bgcolor="#111827",
+        font=dict(family="Roboto Mono, monospace", size=10, color="#9ca3af"),
+        xaxis=dict(
+            showgrid=True,
+            gridcolor="#1f2937",
+            zeroline=False,
+            title="Date",
+            title_font=dict(size=10)
+        ),
+        yaxis=dict(
+            showgrid=True,
+            gridcolor="#1f2937",
+            zeroline=True,
+            zerolinecolor="#1f2937",
+            title="Cumulative Uplift ($M)",
+            title_font=dict(size=10)
+        ),
+        margin=dict(l=40, r=20, t=20, b=40),
+        height=300,
+        hovermode="x unified",
+        showlegend=False
+    )
+    
+    return html.Div([
+        html.Div("EQUITY CURVE", className="section-header"),
+        dcc.Graph(figure=fig, config={"displayModeBar": False})
+    ], className="card")
 
-app.layout = dbc.Container([
-    # Auto-refresh every 15 minutes (900000 ms)
+
+# App layout
+app.layout = html.Div([
+    create_terminal_header(),
+    
     dcc.Interval(
         id='interval-component',
-        interval=15*60*1000,  # 15 minutes in milliseconds
+        interval=15*60*1000,  # 15 minutes
         n_intervals=0
     ),
     
-    dbc.Row([
-        dbc.Col([
-            html.H1("LNG Cargo Diversion Engine", className="mt-4 mb-1 hero-text"),
-            html.P("US Gulf → Rotterdam (TTF) vs Tokyo (JKM)", className="mb-4", style={'color': 'rgba(255,255,255,0.9)', 'fontSize': '18px'})
-        ], width=8),
-        dbc.Col([
-            html.Div(id="timestamp-display")
-        ], width=4, className="text-end")
-    ]),
+    html.Div([
+        # Market ticker
+        html.Div(id="market-ticker-container", style={"padding": "8px"}),
+        
+        # Main content grid
+        html.Div([
+            # Left column - Decision + Netback + Hedge
+            html.Div([
+                html.Div(id="decision-container"),
+                html.Div(id="netback-container"),
+                html.Div(id="hedge-container")
+            ], style={"padding": "4px"}, className="col-md-6"),
+            
+            # Right column - Stress + Backtest
+            html.Div([
+                html.Div(id="stress-container"),
+                html.Div(id="backtest-container"),
+                html.Div(id="equity-container")
+            ], style={"padding": "4px"}, className="col-md-6")
+        ], className="row")
+    ], className="container-fluid", style={"padding": "4px"}),
     
-    dbc.Row([
-        dbc.Col(section_1, width=12)
-    ]),
-    
-    dbc.Row([
-        dbc.Col(section_2, width=12)
-    ]),
-    
-    dbc.Row([
-        dbc.Col(section_3, width=12)
-    ]),
-    
-    dbc.Row([
-        dbc.Col(section_4, width=12)
-    ]),
-    
-    dbc.Row([
-        dbc.Col(section_5, width=12)
-    ]),
-    
-    html.Footer([
-        html.Hr(style={'borderColor': 'rgba(255,255,255,0.3)'}),
-        html.P("Data: TTF & EUA from Yahoo Finance (15-20 min delay) | JKM = TTF + $2.75 premium | Freight & Fuel = Proxy", 
-               className="text-center mb-4", style={'color': 'rgba(255,255,255,0.7)'})
-    ])
-    
-], fluid=True, className="px-4", style={'paddingBottom': '40px'})
-
-
-# ============================================================================
-# CALLBACKS - Enable Dynamic Updates
-# ============================================================================
-
-@app.callback(
-    Output("timestamp-display", "children"),
-    Input('interval-component', 'n_intervals')
-)
-def update_timestamp(n):
-    """Update the timestamp display."""
-    now = datetime.now()
-    return html.Div([
-        html.H5(now.strftime("%d %B %Y"), className="text-end mb-0 mt-4", style={'color': 'white', 'fontWeight': '600'}),
-        html.P(now.strftime("%H:%M UTC"), className="text-end mb-0", style={'color': 'rgba(255,255,255,0.8)', 'fontSize': '14px'}),
-        html.P("🔄 15-min refresh (delayed data)", className="text-end mb-0", style={'color': 'rgba(255,255,255,0.6)', 'fontSize': '11px'})
-    ])
+    html.Div([
+        html.Span("LNG DIVERSION ENGINE | ", style={"fontWeight": "600"}),
+        html.Span("Data: Yahoo Finance (TTF, EUA 15-20min delay) | "),
+        html.Span("JKM Proxy: TTF + Variable Premium | "),
+        html.Span("Auto-refresh: 15min | "),
+        html.Span(f"© {datetime.now().year} DevX")
+    ], className="terminal-footer")
+], style={"minHeight": "100vh", "display": "flex", "flexDirection": "column"})
 
 
 @app.callback(
-    [
-        Output("section-1-content", "children"),
-        Output("section-2-content", "children"),
-        Output("section-3-content", "children"),
-        Output("section-5-content", "children")
-    ],
-    Input('interval-component', 'n_intervals')
+    [Output("market-ticker-container", "children"),
+     Output("decision-container", "children"),
+     Output("netback-container", "children"),
+     Output("hedge-container", "children"),
+     Output("stress-container", "children"),
+     Output("backtest-container", "children"),
+     Output("equity-container", "children")],
+    [Input("interval-component", "n_intervals")]
 )
-def update_live_sections(n):
-    """Update live decision, trade ticket, stress test, and analytics charts.
-    
-    This callback fires:
-    1. On page load (n_intervals = 0)
-    2. Every 15 minutes while page is open
-    """
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Refreshing live data (trigger #{n})...")
-    
-    # Fetch fresh market data and run decision
+def update_dashboard(n):
+    """Update all dashboard sections."""
+    # Load live decision
     trade_pack, market_snapshot, config = load_live_decision()
     
-    decision = trade_pack["decision"]["decision"]
-    delta_adj = trade_pack["decision"]["delta_adj_usd"]
-    europe_netback = trade_pack["europe"]["netback_usd"]
-    asia_netback = trade_pack["asia"]["netback_usd"]
-    hedge_legs = trade_pack["hedge_legs"]
+    # Load stress tests
+    stress_results = load_stress_results(trade_pack["decision"]["delta_adj_usd"], trade_pack["decision"]["decision"])
     
-    # Section 1: Decision
-    decision_color = "success" if decision == "DIVERT" else "secondary"
-    decision_badge = dbc.Badge(decision, color=decision_color, className="fs-1 px-4 py-3")
+    # Load backtest (cached, only loads once)
+    bt_results = load_backtest_results()
     
-    section_1 = dbc.Card([
-        dbc.CardBody([
-            html.H2("TODAY'S DECISION", className="text-muted mb-4"),
-            html.Div([
-                decision_badge,
-                html.H3(f"${delta_adj:,.0f}", className="text-success mt-3 mb-0"),
-                html.P("Adjusted Uplift", className="text-muted")
-            ], className="text-center mb-4"),
-            
-            dbc.Row([
-                dbc.Col([
-                    html.H5("Europe Netback", className="text-muted mb-2"),
-                    html.H4(f"${europe_netback:,.0f}", className="mb-0")
-                ], width=6),
-                dbc.Col([
-                    html.H5("Asia Netback", className="text-muted mb-2"),
-                    html.H4(f"${asia_netback:,.0f}", className="mb-0")
-                ], width=6),
-            ], className="mb-4"),
-            
-            html.Hr(),
-            
-            html.H5("Market Snapshot", className="text-muted mb-3"),
-            dbc.Row([
-                dbc.Col([
-                    html.Strong("TTF:"),
-                    html.Span(f" ${market_snapshot.ttf_usd_mmbtu:.2f}/MMBtu")
-                ], width=4),
-                dbc.Col([
-                    html.Strong("JKM:"),
-                    html.Span(f" ${market_snapshot.jkm_usd_mmbtu:.2f}/MMBtu")
-                ], width=4),
-                dbc.Col([
-                    html.Strong("EUA:"),
-                    html.Span(f" ${market_snapshot.eua_usd_per_tco2:.2f}/tCO₂")
-                ], width=4),
-            ], className="mb-2"),
-            dbc.Row([
-                dbc.Col([
-                    html.Strong("Freight:"),
-                    html.Span(f" ${market_snapshot.freight_usd_day:,.0f}/day")
-                ], width=4),
-                dbc.Col([
-                    html.Strong("Fuel:"),
-                    html.Span(f" ${market_snapshot.fuel_usd_per_t:.0f}/t")
-                ], width=4),
-                dbc.Col([
-                    html.Small(f"As of: {market_snapshot.asof}", className="text-muted")
-                ], width=4),
-            ]),
-        ])
-    ], className="mb-4 shadow")
-    
-    # Section 2: Trade Ticket
-    section_2 = dbc.Card([
-        dbc.CardBody([
-            html.H4("TRADE TICKET", className="text-muted mb-4"),
-            dbc.Row([
-                dbc.Col([
-                    html.H5(hedge_legs[0]["leg"], className="text-primary mb-2"),
-                    html.H3(f"{hedge_legs[0]['lots']} lots", className="mb-0")
-                ], width=6),
-                dbc.Col([
-                    html.H5(hedge_legs[1]["leg"], className="text-danger mb-2"),
-                    html.H3(f"{hedge_legs[1]['lots']} lots", className="mb-0")
-                ], width=6),
-            ], className="mb-3"),
-            
-            html.Hr(),
-            
-            dbc.Row([
-                dbc.Col([
-                    html.Small("Coverage:", className="text-muted"),
-                    html.Span(f" {float(config['COVERAGE_PCT'])*100:.0f}%")
-                ], width=4),
-                dbc.Col([
-                    html.Small("Basis haircut:", className="text-muted"),
-                    html.Span(f" {float(config['BASIS_ADJUSTMENT'])*100:.1f}%")
-                ], width=4),
-                dbc.Col([
-                    html.Small("Ops buffer:", className="text-muted"),
-                    html.Span(f" ${float(config['OPS_BUFFER_USD']):,.0f}")
-                ], width=4),
-            ])
-        ])
-    ], className="mb-4 shadow")
-    
-    # Section 3: Stress Test
-    stress_pack = load_stress_results(delta_adj, decision)
-    stress_rows = []
-    for scenario in stress_pack.scenarios:
-        stress_rows.append(html.Tr([
-            html.Td(scenario["name"]),
-            html.Td(f"${scenario['delta_adj_usd']:,.0f}", className="text-end"),
-            html.Td(
-                scenario["decision"],
-                className="text-success" if scenario["decision"] == "DIVERT" else "text-secondary"
-            ),
-        ]))
-    
-    section_3 = dbc.Card([
-        dbc.CardBody([
-            html.H4("RISK / STRESS PACK", className="text-muted mb-4"),
-            dbc.Table([
-                html.Thead(html.Tr([
-                    html.Th("Scenario"),
-                    html.Th("Adjusted Uplift", className="text-end"),
-                    html.Th("Decision"),
-                ])),
-                html.Tbody(stress_rows)
-            ], bordered=True, hover=True, className="mb-3"),
-            
-            html.Div([
-                html.Strong("Worst case P&L: "),
-                html.Span(f"${stress_pack.worst_case_pnl:,.0f}", className="text-danger" if stress_pack.worst_case_pnl < 0 else "")
-            ])
-        ])
-    ], className="mb-4 shadow")
-    
-    # Section 5: Analytics Charts
-    # Netback Comparison Bar Chart
-    netback_fig = go.Figure()
-    netback_fig.add_trace(go.Bar(
-        x=[europe_netback / 1e6, asia_netback / 1e6],
-        y=['Europe<br>(Rotterdam)', 'Asia<br>(Tokyo)'],
-        orientation='h',
-        marker=dict(color=['#667eea', '#10b981'], line=dict(color='black', width=1.5)),
-        text=[f'${europe_netback/1e6:.1f}M', f'${asia_netback/1e6:.1f}M'],
-        textposition='inside',
-        textfont=dict(size=14, color='white', family='Inter, sans-serif'),
-        hovertemplate='%{y}: $%{x:.1f}M<extra></extra>'
-    ))
-    
-    netback_fig.update_layout(
-        title="Netback Comparison",
-        xaxis_title="Netback (USD Million)",
-        yaxis_title="",
-        template='plotly_white',
-        height=300,
-        margin=dict(l=20, r=20, t=40, b=20),
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        font=dict(family='Inter, sans-serif', size=12, color='black'),
-        xaxis=dict(gridcolor='rgba(0,0,0,0.1)'),
-        showlegend=False
+    return (
+        create_market_ticker(market_snapshot),
+        create_decision_section(trade_pack),
+        create_netback_table(trade_pack),
+        create_hedge_instructions(trade_pack),
+        create_stress_table(stress_results),
+        create_backtest_section(bt_results),
+        create_equity_chart(bt_results)
     )
-    
-    # Uplift Waterfall Chart
-    raw_uplift = trade_pack["decision"]["delta_raw_usd"] / 1e6
-    basis_haircut = raw_uplift * float(config["BASIS_ADJUSTMENT"])
-    ops_buffer = float(config["OPS_BUFFER_USD"]) / 1e6
-    
-    waterfall_fig = go.Figure()
-    waterfall_fig.add_trace(go.Waterfall(
-        x=['Raw<br>Uplift', 'Basis<br>Haircut<br>(-5%)', 'Ops<br>Buffer', 'Adjusted<br>Uplift'],
-        y=[raw_uplift, -basis_haircut, -ops_buffer, delta_adj / 1e6],
-        measure=['absolute', 'relative', 'relative', 'total'],
-        text=[f'${raw_uplift:.2f}M', f'-${basis_haircut:.2f}M', f'-${ops_buffer:.2f}M', f'${delta_adj/1e6:.2f}M'],
-        textposition='inside',
-        textfont=dict(color='white', size=12, family='Inter, sans-serif'),
-        connector=dict(line=dict(color='rgba(0,0,0,0.3)', width=1, dash='dot')),
-        increasing=dict(marker=dict(color='#10b981')),
-        decreasing=dict(marker=dict(color='#ef4444')),
-        totals=dict(marker=dict(color='#667eea')),
-        hovertemplate='%{x}: $%{y:.2f}M<extra></extra>'
-    ))
-    
-    waterfall_fig.update_layout(
-        title="Uplift Waterfall: Raw to Adjusted",
-        yaxis_title="USD (Million)",
-        template='plotly_white',
-        height=350,
-        margin=dict(l=20, r=20, t=40, b=20),
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        font=dict(family='Inter, sans-serif', size=12, color='black'),
-        yaxis=dict(gridcolor='rgba(0,0,0,0.1)'),
-        showlegend=False
-    )
-    
-    section_5 = dbc.Card([
-        dbc.CardBody([
-            html.H4("ANALYTICS CHARTS", className="text-muted mb-4"),
-            
-            dbc.Row([
-                dbc.Col([
-                    dcc.Graph(figure=netback_fig, config={
-                        'displayModeBar': True,
-                        'displaylogo': False,
-                        'toImageButtonOptions': {
-                            'format': 'png',
-                            'filename': 'netback_comparison',
-                            'height': 900,
-                            'width': 1600,
-                            'scale': 3
-                        }
-                    })
-                ], width=6),
-                dbc.Col([
-                    dcc.Graph(figure=waterfall_fig, config={
-                        'displayModeBar': True,
-                        'displaylogo': False,
-                        'toImageButtonOptions': {
-                            'format': 'png',
-                            'filename': 'uplift_waterfall',
-                            'height': 1050,
-                            'width': 1600,
-                            'scale': 3
-                        }
-                    })
-                ], width=6),
-            ]),
-            
-            html.P("💡 Charts update automatically with market data. Use the camera icon to download as PNG for presentations.",
-                   className="text-muted text-center mt-2", style={'fontSize': '12px'})
-        ])
-    ], className="mb-4 shadow")
-    
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Live data refreshed: {decision} @ ${delta_adj:,.0f}")
-    
-    return section_1, section_2, section_3, section_5
 
 
 if __name__ == "__main__":
-    print("\n" + "="*60)
-    print("LNG DIVERSION DASHBOARD")
-    print("="*60)
-    print("Starting Dash server...")
-    print("Access at: http://127.0.0.1:8050")
-    print("")
-    print("✨ AUTO-REFRESH ENABLED:")
-    print("   • Fresh data on every page load")
-    print("   • Auto-updates every 15 minutes while open")
-    print("   • Backtest cached at startup (530 days)")
-    print("")
+    print("\n" + "="*80)
+    print("LNG DIVERSION ENGINE | TERMINAL DASHBOARD")
+    print("="*80)
+    print("Starting server on http://127.0.0.1:8051")
+    print("Financial terminal UI | Dark mode | Data-dense layout")
     print("Press Ctrl+C to stop")
-    print("="*60 + "\n")
+    print("="*80 + "\n")
     
-    app.run(debug=True, host='127.0.0.1', port=8050)
+    app.run(debug=True, host="0.0.0.0", port=8051)

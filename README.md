@@ -151,6 +151,8 @@ Runs decision rule on 530+ days of historical data (Jan 2024 - Feb 2026) to vali
 
 Interactive web dashboard consolidating all outputs in a single-page view:
 
+**UI Style:** Financial terminal aesthetic (dark mode, data-dense, monospace fonts, Bloomberg-inspired)
+
 **Features:**
 - **Section 1:** Today's decision with live market snapshot (15-20 min delay)
 - **Section 2:** Trade ticket with hedge instructions and risk exposure
@@ -158,9 +160,11 @@ Interactive web dashboard consolidating all outputs in a single-page view:
 - **Section 4:** Rule validation metrics with equity curve chart
 - **Section 5:** Analytics visualizations (netback comparison, uplift waterfall)
 - **Auto-refresh:** Live sections update every 15 minutes
-- **Export:** Download charts as high-resolution PNGs
+- **Terminal style:** Monospace fonts, compact grids, institutional color scheme
 
-**Access:** `http://127.0.0.1:8050` after running `.venv/bin/python dashboard.py`
+**Access:** `http://127.0.0.1:8050` after running `python dashboard.py`
+
+**Alternative UI:** Light mode version available as `dashboard_light.py` (gradient design, consumer-friendly)
 
 ---
 
@@ -286,12 +290,16 @@ python app.py --asia-port Singapore --basis 0.04 --save
 
 **Access:** Open browser to `http://127.0.0.1:8050`
 
+**UI:** Financial terminal theme (dark mode, data-dense, monospace)
+
 **Features:**
 - **Live data:** Fresh market snapshot on page load
 - **Auto-refresh:** Live sections update every 15 minutes
 - **Backtest cache:** Historical validation cached at startup for fast loading
 - **Single-page layout:** Scroll through all 5 sections
-- **Export charts:** Download high-resolution PNGs
+- **Terminal aesthetics:** Bloomberg-inspired, institutional design
+
+**Alternative:** Run `python dashboard_light.py` for light mode UI (gradient design)
 
 **Stop server:** Press `Ctrl+C` in terminal
 
@@ -318,7 +326,8 @@ python app.py --asia-port Singapore --basis 0.04 --save
 ```
 lng-cargo-diversion-engine/
 ├── app.py                      # CLI entry point (live & backtest modes)
-├── dashboard.py                # Web dashboard server
+├── dashboard.py                # Web dashboard (terminal UI - default)
+├── dashboard_light.py          # Web dashboard (light mode - alternative)
 ├── requirements.txt            # Python dependencies
 ├── README.md                   # This file
 │
