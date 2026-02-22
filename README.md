@@ -160,7 +160,7 @@ Interactive web dashboard consolidating all outputs in a single-page view:
 - **Auto-refresh:** Live sections update every 15 minutes
 - **Export:** Download charts as high-resolution PNGs
 
-**Access:** `http://127.0.0.1:8050` after running `python dashboard.py`
+**Access:** `http://127.0.0.1:8050` after running `.venv/bin/python dashboard.py`
 
 ---
 
@@ -281,7 +281,7 @@ python app.py --asia-port Singapore --basis 0.04 --save
 
 **Start the dashboard:**
 ```bash
-python dashboard.py
+.venv/bin/python dashboard.py
 ```
 
 **Access:** Open browser to `http://127.0.0.1:8050`
