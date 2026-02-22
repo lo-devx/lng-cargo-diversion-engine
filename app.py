@@ -110,16 +110,14 @@ def run_backtest(args):
     # Display metrics
     metrics = backtest_result.metrics
     print("\n" + "="*60)
-    print("BACKTEST RESULTS")
+    print("RULE VALIDATION (Backtest)")
     print("="*60)
-    print(f"Total observations: {metrics.total_observations}")
-    print(f"Triggered trades: {metrics.triggered_trades}")
-    print(f"Hit rate: {metrics.hit_rate:.1%}")
-    print(f"Average uplift: ${metrics.average_uplift_usd:,.0f}")
-    print(f"Total uplift: ${metrics.total_uplift_usd:,.0f}")
-    print(f"Max drawdown: ${metrics.max_drawdown_usd:,.0f}")
-    if metrics.sharpe_ratio:
-        print(f"Sharpe ratio: {metrics.sharpe_ratio:.2f}")
+    print("⚠️  Note: Measures trigger frequency & conditional uplift,")
+    print("    not actual trading P&L (no slippage, basis risk, hedging costs)")
+    print("="*60)
+    print(f"Observation period: {metrics.total_observations} days")
+    print(f"Average conditional uplift: ${metrics.average_uplift_usd:,.0f}")
+    print(f"Total conditional uplift: ${metrics.total_uplift_usd:,.0f}")
     print("="*60)
     
     # Save results if requested

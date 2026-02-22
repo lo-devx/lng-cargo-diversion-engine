@@ -334,36 +334,32 @@ metrics = backtest_result.metrics
 
 section_4 = dbc.Card([
     dbc.CardBody([
-        html.H4("HISTORICAL VALIDATION", className="text-muted mb-4"),
+        html.H4("RULE VALIDATION", className="text-muted mb-4"),
         
         dbc.Row([
             dbc.Col([
                 html.Div([
-                    html.H6("Total Observations", className="text-muted mb-2"),
-                    html.H3(f"{metrics.total_observations}", className="mb-0", style={'color': '#667eea'})
+                    html.H6("Observation Period", className="text-muted mb-2"),
+                    html.H3(f"{metrics.total_observations} days", className="mb-0", style={'color': '#667eea'}),
+                    html.P("Jan 2024 - Feb 2026", className="text-muted mb-0", style={'fontSize': '12px'})
                 ], className="stat-card")
-            ], width=3),
+            ], width=6),
             dbc.Col([
                 html.Div([
-                    html.H6("Hit Rate", className="text-muted mb-2"),
-                    html.H3(f"{metrics.hit_rate:.1%}", className="mb-0", style={'color': '#10b981'})
+                    html.H6("Avg Conditional Uplift", className="text-muted mb-2"),
+                    html.H3(f"${metrics.average_uplift_usd/1e6:.1f}M", className="mb-0", style={'color': '#f59e0b'}),
+                    html.P("Per trigger (after buffers)", className="text-muted mb-0", style={'fontSize': '12px'})
                 ], className="stat-card")
-            ], width=3),
-            dbc.Col([
-                html.Div([
-                    html.H6("Average Uplift", className="text-muted mb-2"),
-                    html.H3(f"${metrics.average_uplift_usd/1e6:.1f}M", className="mb-0", style={'color': '#f59e0b'})
-                ], className="stat-card")
-            ], width=3),
-            dbc.Col([
-                html.Div([
-                    html.H6("Sharpe Ratio", className="text-muted mb-2"),
-                    html.H3(f"{metrics.sharpe_ratio:.2f}" if metrics.sharpe_ratio else "N/A", className="mb-0", style={'color': '#8b5cf6'})
-                ], className="stat-card")
-            ], width=3),
+            ], width=6),
         ], className="mb-4"),
         
-        dcc.Graph(figure=equity_fig)
+        dcc.Graph(figure=equity_fig),
+        
+        html.P([
+            "⚠️ This validates trigger frequency and conditional uplift. ",
+            html.Strong("Not a trading performance backtest."),
+            " Actual P&L would include execution slippage, basis risk, and hedging costs."
+        ], className="text-muted text-center mt-3", style={'fontSize': '12px'})
     ])
 ], className="mb-4 shadow")
 
@@ -419,7 +415,7 @@ app.layout = dbc.Container([
     
     html.Footer([
         html.Hr(style={'borderColor': 'rgba(255,255,255,0.3)'}),
-        html.P("Data: TTF & EUA from Yahoo Finance | JKM = TTF + $2.75 premium | Freight & Fuel = Proxy", 
+        html.P("Data: TTF & EUA from Yahoo Finance (15-20 min delay) | JKM = TTF + $2.75 premium | Freight & Fuel = Proxy", 
                className="text-center mb-4", style={'color': 'rgba(255,255,255,0.7)'})
     ])
     
@@ -440,7 +436,7 @@ def update_timestamp(n):
     return html.Div([
         html.H5(now.strftime("%d %B %Y"), className="text-end mb-0 mt-4", style={'color': 'white', 'fontWeight': '600'}),
         html.P(now.strftime("%H:%M UTC"), className="text-end mb-0", style={'color': 'rgba(255,255,255,0.8)', 'fontSize': '14px'}),
-        html.P("🔄 Auto-refresh: 15 min", className="text-end mb-0", style={'color': 'rgba(255,255,255,0.6)', 'fontSize': '11px'})
+        html.P("🔄 15-min refresh (delayed data)", className="text-end mb-0", style={'color': 'rgba(255,255,255,0.6)', 'fontSize': '11px'})
     ])
 
 
