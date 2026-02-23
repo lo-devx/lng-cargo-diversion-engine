@@ -1,10 +1,8 @@
 """
 LNG Cargo Diversion Decision Engine - Dash Dashboard
 
-=== WHAT THIS DOES (IN SIMPLE TERMS) ===
-
-Imagine you have a ship full of LNG (liquefied natural gas) leaving the US Gulf Coast.
-You need to decide: should you sell it in Europe (Rotterdam) or divert to Asia (Tokyo)?
+A ship full of LNG (liquefied natural gas) leaving the US Gulf Coast.
+Decision: should you sell it in Europe (Rotterdam) or divert to Asia (Tokyo)?
 
 This dashboard helps make that decision by:
 
@@ -28,8 +26,8 @@ This dashboard helps make that decision by:
 5. PROVING IT WORKS:
    - Backtests the rule on 2+ years of real market data
    - Shows cumulative profit, hit rate, and risk-adjusted returns
-
-Think of it as: "GPS for cargo routing" + "Risk calculator" + "Historical proof"
+   
+Designed for traders and analysts to quickly understand the decision logic and confidently execute the right trade. Built with Dash for an interactive web experience
 
 Run with: python dashboard.py
 Access at: http://127.0.0.1:8050

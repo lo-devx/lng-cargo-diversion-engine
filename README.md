@@ -151,9 +151,6 @@ Runs decision rule on 530+ days of historical data (Jan 2024 - Feb 2026) to vali
 
 Interactive web dashboard consolidating all outputs in a single-page view:
 
-#### Terminal Dashboard (Default)
-
-**UI Style:** Financial terminal aesthetic (dark mode, data-dense, monospace fonts, Bloomberg-inspired)
 
 **Features:**
 - **Section 1:** Today's decision with live market snapshot (15-20 min delay)
@@ -162,7 +159,6 @@ Interactive web dashboard consolidating all outputs in a single-page view:
 - **Section 4:** Rule validation metrics with equity curve chart
 - **Section 5:** Analytics visualizations (netback comparison, uplift waterfall)
 - **Auto-refresh:** Live sections update every 15 minutes
-- **Terminal style:** Monospace fonts, compact grids, institutional color scheme
 
 **Access:** `http://127.0.0.1:8051` after running `python dashboard.py`
 
