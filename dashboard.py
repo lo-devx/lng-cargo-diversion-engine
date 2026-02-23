@@ -1,14 +1,15 @@
 """
 LNG Cargo Diversion Decision Engine - Terminal Dashboard
 
-FINANCIAL TERMINAL UI
-- Dark mode with monospace fonts
-- Data-dense institutional layout
-- Terminal-style information compression
-- Desk screen aesthetic
+Web interface for LNG cargo routing decisions. Shows live market data, netback 
+calculations, and hedge instructions. Runs decision logic against current TTF/JKM 
+prices to determine whether to send cargo to Europe or Asia. Includes stress tests 
+and historical backtest validation.
 
-Run with: python dashboard_terminal.py
-Access at: http://127.0.0.1:8051
+Dark terminal UI - monospace fonts, flat design, data-dense grids.
+
+Run: python dashboard.py
+URL: http://127.0.0.1:8051
 """
 
 import dash
@@ -31,7 +32,7 @@ from types import SimpleNamespace
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
 app.title = "LNG Terminal | DevX"
 
-# Terminal-style CSS - Bloomberg/Reuters inspired
+# Terminal-style CSS 
 app.index_string = '''
 <!DOCTYPE html>
 <html>

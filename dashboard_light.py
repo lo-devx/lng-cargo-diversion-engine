@@ -198,19 +198,65 @@ def load_live_decision():
 
 
 def load_stress_results(delta_adj, decision):
-    """Load stress test results - simplified to show scenarios only."""
+    """Load stress test results."""
+    routes = load_routes()
+    vessels = load_vessels()
+    carbon_params = load_carbon_params()
     config = load_config()
     
-    # Create mock stress pack with typical scenarios
-    # In a full implementation, this would call RiskAnalyzer
-    scenarios = [
-        {"name": "Base Case", "delta_adj_usd": delta_adj, "decision": decision},
-        {"name": "Spread Collapse (-$2.50)", "delta_adj_usd": delta_adj - 2500000, "decision": "DIVERT" if delta_adj - 2500000 > 500000 else "KEEP"},
-        {"name": "Spread Widen (+$2.50)", "delta_adj_usd": delta_adj + 2500000, "decision": "DIVERT"},
-        {"name": "Freight Spike (+$10k/day)", "delta_adj_usd": delta_adj - 400000, "decision": "DIVERT" if delta_adj - 400000 > 500000 else "KEEP"},
-        {"name": "EUA Spike (+$10/t)", "delta_adj_usd": delta_adj - 200000, "decision": "DIVERT" if delta_adj - 200000 > 500000 else "KEEP"},
-        {"name": "Worst Case Combined", "delta_adj_usd": delta_adj - 3100000, "decision": "DIVERT" if delta_adj - 3100000 > 500000 else "KEEP"},
-    ]
+    trade_pack, market_snapshot, _ = load_live_decision()
+    
+    # Create NetbackCalculator
+    from engine.netback import NetbackCalculator
+    calculator = NetbackCalculator(routes, vessels, carbon_params)
+    
+    # Use RiskAnalyzer with proper parameters
+    analyzer = RiskAnalyzer(
+        netback_calculator=calculator,
+        stress_spread_usd=float(config["STRESS_SPREAD_USD"]),
+        stress_freight_usd_per_day=float(config["STRESS_FREIGHT_USD_PER_DAY"]),
+        stress_eua_usd=float(config["STRESS_EUA_USD"]),
+        basis_haircut_pct=float(config["BASIS_ADJUSTMENT"]),
+        ops_buffer_usd=float(config["OPS_BUFFER_USD"]),
+        decision_buffer_usd=float(config["DECISION_BUFFER_USD"])
+    )
+    
+    # Extract base result from trade_pack
+    from engine.decision import DecisionResult
+    base_result = DecisionResult(
+        delta_netback_raw_usd=trade_pack["decision"]["delta_raw_usd"],
+        delta_netback_adj_usd=trade_pack["decision"]["delta_adj_usd"],
+        basis_haircut_pct=trade_pack["inputs"]["basis_haircut_pct"],
+        ops_buffer_usd=trade_pack["inputs"]["ops_buffer_usd"],
+        decision_buffer_usd=trade_pack["inputs"]["decision_buffer_usd"],
+        decision=trade_pack["decision"]["decision"],
+        hedge_energy_mmbtu=trade_pack["decision"]["hedge_energy_mmbtu"],
+        lots_ttf=trade_pack["decision"]["lots_ttf"],
+        lots_jkm=trade_pack["decision"]["lots_jkm"]
+    )
+    
+    risk_pack = analyzer.run_stress_test(
+        base_result=base_result,
+        load_port=trade_pack["inputs"]["load_port"],
+        europe_port=trade_pack["inputs"]["europe_port"],
+        asia_port=trade_pack["inputs"]["asia_port"],
+        vessel_class=trade_pack["inputs"]["vessel_class"],
+        cargo_capacity_m3=trade_pack["inputs"]["cargo_capacity_m3"],
+        ttf_price=trade_pack["inputs"]["ttf_price"],
+        jkm_price=trade_pack["inputs"]["jkm_price"],
+        freight_rate_usd_day=trade_pack["inputs"]["freight_rate_usd_day"],
+        fuel_price_usd_t=trade_pack["inputs"]["fuel_price_usd_t"],
+        eua_price_usd_t=trade_pack["inputs"]["eua_price_usd_t"]
+    )
+    
+    # Convert to format expected by light dashboard
+    scenarios = []
+    for result in risk_pack.stress_results:
+        scenarios.append({
+            "name": result.scenario.name,
+            "delta_adj_usd": result.stressed_delta_netback_adj,
+            "decision": result.stressed_decision
+        })
     
     worst_case = min(s["delta_adj_usd"] for s in scenarios)
     
