@@ -151,6 +151,8 @@ Runs decision rule on 530+ days of historical data (Jan 2024 - Feb 2026) to vali
 
 Interactive web dashboard consolidating all outputs in a single-page view:
 
+#### Terminal Dashboard (Default)
+
 **UI Style:** Financial terminal aesthetic (dark mode, data-dense, monospace fonts, Bloomberg-inspired)
 
 **Features:**
@@ -162,9 +164,9 @@ Interactive web dashboard consolidating all outputs in a single-page view:
 - **Auto-refresh:** Live sections update every 15 minutes
 - **Terminal style:** Monospace fonts, compact grids, institutional color scheme
 
-**Access:** `http://127.0.0.1:8050` after running `python dashboard.py`
+**Access:** `http://127.0.0.1:8051` after running `python dashboard.py`
 
-**Alternative UI:** Light mode version available as `dashboard_light.py` (gradient design, consumer-friendly)
+![Terminal Dashboard](screenshots/terminal_dashboard.png)
 
 ---
 
