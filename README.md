@@ -166,7 +166,7 @@ Interactive web dashboard consolidating all outputs in a single-page view:
 
 **Access:** `http://127.0.0.1:8051` after running `python dashboard.py`
 
-![Terminal Dashboard](screenshots/terminal_dashboard.png)
+![Terminal Dashboard](screenshots/7-terminal_dashboard.png)
 
 ---
 
