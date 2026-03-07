@@ -502,7 +502,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Repository:** [github.com/lo-devx/lng-cargo-diversion-engine](https://github.com/lo-devx/lng-cargo-diversion-engine)
 
-**Issues:** [github.com/lo-devx/lng-cargo-diversion-engine/issues](https://github.com/lo-devx/lng-cargo-diversion-engine/issues)
+## Communications
+[Presentation Deck (Download powerpoint deck)](docs/executive_summary/lyndon_odia_lng_cargo_diversion_engine_executive_summary.pdf)
 
 ---
 
